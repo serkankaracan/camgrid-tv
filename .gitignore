@@ -1,0 +1,39 @@
+# Android and Gradle
+.gradle/
+build/
+**/build/
+captures/
+.cxx/
+.externalNativeBuild/
+
+# Local SDK and test configuration
+local.properties
+.local-test-config
+.local-test-config.*
+*.local.properties
+
+# IDEs and editors
+.idea/
+*.iml
+.vscode/
+
+# Signing material and secrets
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
+keystore.properties
+
+# Generated artifacts and diagnostics
+*.apk
+*.aab
+*.apks
+*.log
+adb-logcat*
+vlc-log*
+reports/
+
+# Windows
+Thumbs.db
+Desktop.ini
