@@ -10,9 +10,9 @@ current KARACAM candidate contains the issue #16 playback correction. On
 both lint variants completed with no errors, and debug, instrumented-test and
 minified unsigned release APKs were assembled. Exact local evidence is recorded
 in `docs/TEST_REPORT.md`. The implementation revision and GitHub Actions result
-are populated only after this tree is committed, pushed and observed. Earlier
-commit `de43abc` and run `33785512583` are historical evidence, not evidence for
-this candidate.
+are implementation commit `371ef84` and passing GitHub Actions run
+`33798554004` (7m 14s). Earlier commit `de43abc` and run `33785512583` are
+historical evidence, not evidence for this candidate.
 
 A user-run pre-fix physical test confirmed that two camera `/stream2` feeds can
 play together and exposed two regressions: the C510W `/stream1` fullscreen feed
@@ -73,7 +73,7 @@ Current integrated evidence:
 | Final integrated quality gate | PASS; PowerShell gate exited 0 |
 | Final JVM test count | PASS; 32 suites, 163 tests, 0 failures/errors/skipped |
 | Final debug APK size and SHA-256 | PASS; 17,125,741 bytes, `612BAE7ED1D87924EA9A2119E2E8C766B33B5E8DBD931460E66AFB9895947A68` |
-| Final revision and GitHub Actions run | PENDING commit, push and observation |
+| Final revision and GitHub Actions run | PASS; implementation `371ef84`, run `33798554004` |
 | Physical Mi Stick instrumented tests | BLOCKED; no adb-connected device in this run |
 | Corrected camera and Android TV regression | PENDING user retest |
 

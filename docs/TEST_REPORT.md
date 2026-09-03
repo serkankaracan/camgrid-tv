@@ -11,13 +11,13 @@ port check, fake or emulator test is not physical camera or Mi Stick evidence.
 
 This section is the only source of truth for the current candidate. Local
 evidence was measured on 2026-09-03 after the fullscreen fallback, fitted video
-surface and KARACAM branding changes. The implementation commit and its GitHub
-Actions result are populated only after the exact tree is pushed. Do not copy a
-number, hash or run ID from the historical section.
+surface and KARACAM branding changes, then the exact implementation tree was
+committed, pushed and observed in GitHub Actions. Do not copy a number, hash or
+run ID from the historical section.
 
 | Check | Status | Current evidence |
 | --- | --- | --- |
-| Repository revision | PENDING | Local candidate for issue #16; exact implementation commit not yet created |
+| Repository revision | PASS | Implementation commit `371ef84363f8390e45d8a40881fc5a16f120b5ac` |
 | Standard PowerShell quality gate | PASS | `invoke-quality-gate.ps1` exited 0; the required Gradle tasks, secret scan and diff check completed |
 | Debug and release lint | PASS WITH WARNINGS | Each variant: 0 fatal, 0 error, 4 warnings: two upgrade notices plus unused and missing-density advisories from the unreferenced legacy banner |
 | JVM unit tests | PASS | 32 suites; 163 tests; 0 failures, 0 errors, 0 skipped |
@@ -30,7 +30,7 @@ number, hash or run ID from the historical section.
 | APK identity, signing and alignment | PASS | Debug package is `io.github.serkankaracan.camgridtv.debug`, target SDK 37, Leanback launcher present; debug and test APKs verify with one v2 signer; all three APKs pass zip alignment |
 | Product identity and TV banner | PASS | Packaged application label is `KARACAM`; manifest points to the new density-independent KARACAM vector banner; stable package ID is retained for in-place updates |
 | adb inventory | BLOCKED | 0 connected rows; 0 authorized, unauthorized or offline devices; `connectedDebugAndroidTest` was not run |
-| GitHub Actions | PENDING | Current candidate has not yet been pushed |
+| GitHub Actions | PASS | Android quality gate run [33798554004](https://github.com/serkankaracan/camgrid-tv/actions/runs/33798554004) passed in 7m 14s for the implementation commit |
 
 Run the final local evidence from Windows PowerShell, without assuming Android
 Studio:
