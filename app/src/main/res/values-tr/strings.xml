@@ -11,8 +11,16 @@
     <string name="scan_cancel">Taramayı iptal et</string>
     <string name="no_cameras_title">Kamera bulunamadı</string>
     <string name="no_cameras_body">TV ile kameraların aynı ağda olduğunu ve misafir Wi-Fi ya da AP isolation özelliğinin kapalı olduğunu kontrol edin.</string>
+    <string name="discovery_error_title">Kamera keşfi kullanılamıyor</string>
+    <string name="discovery_no_local_network">Bu TV’yi kameralarla aynı Wi-Fi veya Ethernet ağına bağlayıp yeniden tarayın.</string>
+    <string name="discovery_network_lost">Tarama sırasında yerel ağ değişti. Bağlantıyı kontrol edip yeniden tarayın.</string>
+    <string name="discovery_transport_unavailable">Yerel keşif bağlantısı başlatılamadı. Yerel ağ iznini kontrol edip yeniden deneyin.</string>
     <string name="camera_account_required">Kamera hesabı bilgileri gerekli</string>
     <string name="camera_account_explanation">Bulut, Wi-Fi veya modem parolası yerine kamera uygulamasında ayrıca oluşturulan Kamera Hesabı’nı kullanın.</string>
+    <string name="credential_recovery_required">Kayıtlı kamera kimlik bilgilerinin kilidi artık açılamıyor. Bilgileri temizleyip kamera hesabını yeniden girin. Hiçbir parola kurtarılmadı veya açığa çıkarılmadı.</string>
+    <string name="credential_recovery_clear_failed">Yerel temizleme tamamlanamadı. Kimlik bilgilerini girmeden önce yeniden deneyin.</string>
+    <string name="credential_recovery_clear">Kayıtlı kimlik bilgilerini temizle</string>
+    <string name="credential_recovery_clearing">Kayıtlı kimlik bilgileri temizleniyor…</string>
     <string name="username">Kamera hesabı kullanıcı adı</string>
     <string name="password">Kamera hesabı parolası</string>
     <string name="use_for_selected">Bu hesabı seçili tüm kameralarda kullan</string>

@@ -11,8 +11,16 @@
     <string name="scan_cancel">Cancel scan</string>
     <string name="no_cameras_title">No cameras found</string>
     <string name="no_cameras_body">Check that the TV and cameras use the same network and that guest Wi-Fi or AP isolation is disabled.</string>
+    <string name="discovery_error_title">Camera discovery is unavailable</string>
+    <string name="discovery_no_local_network">Connect this TV to the same Wi-Fi or Ethernet network as the cameras, then scan again.</string>
+    <string name="discovery_network_lost">The local network changed during the scan. Check the connection and scan again.</string>
+    <string name="discovery_transport_unavailable">The local discovery transport could not start. Check local network permission and try again.</string>
     <string name="camera_account_required">Camera account details required</string>
     <string name="camera_account_explanation">Use the separate Camera Account created in the camera app, not your cloud, Wi-Fi, or router password.</string>
+    <string name="credential_recovery_required">Stored camera credentials can no longer be unlocked. Clear them, then enter the camera account again. No password was recovered or exposed.</string>
+    <string name="credential_recovery_clear_failed">The local cleanup did not finish. Retry before entering credentials.</string>
+    <string name="credential_recovery_clear">Clear stored credentials</string>
+    <string name="credential_recovery_clearing">Clearing stored credentials…</string>
     <string name="username">Camera account username</string>
     <string name="password">Camera account password</string>
     <string name="use_for_selected">Use this account for all selected cameras</string>
