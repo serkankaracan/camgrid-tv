@@ -16,20 +16,20 @@ not copy a number, hash or run ID from the historical section.
 
 | Check | Status | Current evidence |
 | --- | --- | --- |
-| Repository revision | PASS | Implementation commit `42d73d210c0cf06d4ba7a172715d44ba59f53abe` |
-| Standard PowerShell quality gate | PASS | `scripts\invoke-quality-gate.ps1` exited 0 in the final cached handoff rerun |
+| Repository revision | PASS | Implementation commit `de43abc7b1101572a74974a6d37b4dc1ad3d13d2` |
+| Standard PowerShell quality gate | PASS | Contract-equivalent Gradle command exited 0 in 1m 15s |
 | Debug and release lint | PASS WITH WARNINGS | Each variant: 0 fatal, 0 error, 3 warnings; two dependency-update notices and the expected xhdpi-only TV banner density advisory |
-| JVM unit tests | PASS | 31 suites; 145 tests; 0 failures, 0 errors, 0 skipped |
+| JVM unit tests | PASS | 32 suites; 151 tests; 0 failures, 0 errors, 0 skipped |
 | Debug APK build | PASS | `assembleDebug` completed |
 | Debug instrumented-test APK build | PASS | `assembleDebugAndroidTest` completed; compilation is not physical execution |
 | Minified release APK build | PASS | `assembleRelease` completed; artifact is deliberately unsigned and is not a release claim |
-| Secret hygiene | PASS | `Secret hygiene check passed for 153 files.` |
+| Secret hygiene | PASS | `Secret hygiene check passed for 158 files.` |
 | Whitespace/diff validation | PASS | `git diff --check` exited 0; the `.gitignore` LF/CRLF message is a conversion warning, not a diff error |
-| Debug APK size and SHA-256 | PASS | 17,005,567 bytes; `3622C9AB5014F0715FD6AA5B71B0A4E714C43134CBB063837B430F1165930987` |
+| Debug APK size and SHA-256 | PASS | 17,088,767 bytes; `8656B1A0DD234133EBDE923BD23FF02D4B9A0F7D42A2A4FF9D23E3729E2B5737` |
 | APK identity, signing and alignment | PASS | Debug package is `io.github.serkankaracan.camgridtv.debug`, target SDK 37, Leanback launcher present; debug and test APKs verify with one v2 signer; all three APKs pass zip alignment |
 | TV banner asset | PASS | 320x180, 32-bit PNG, 79,262 bytes; packaged as the application banner |
 | adb inventory | BLOCKED | 0 connected rows; 0 authorized, unauthorized or offline devices; `connectedDebugAndroidTest` was not run |
-| GitHub Actions | PASS | Android quality gate run [33729134264](https://github.com/serkankaracan/camgrid-tv/actions/runs/33729134264) passed in 7m 34s for the implementation commit |
+| GitHub Actions | PASS | Android quality gate run [33785512583](https://github.com/serkankaracan/camgrid-tv/actions/runs/33785512583) passed in 7m 56s for the implementation commit |
 
 Run the final local evidence from Windows PowerShell, without assuming Android
 Studio:
@@ -84,6 +84,10 @@ available for the current work. Every physical result therefore remains
 | Validate C510W `/stream2` | BLOCKED | The C510W and an in-app Camera Account entry were unavailable |
 | Run two `/stream2` feeds together for 15 minutes | BLOCKED | Physical cameras and Mi Stick were unavailable |
 | Change wall focus with the physical D-pad | BLOCKED | Mi Stick/remote was unavailable |
+| Verify browse-mode arrows, OK-to-edit, Back/IME Done and password masking | BLOCKED | Mi Stick/remote and physical IME were unavailable |
+| Verify adaptive Verify connection → N cameras action with real feeds | BLOCKED | Physical cameras and Mi Stick were unavailable |
+| Verify conditional header rescan, D-pad reachability and fresh discovery | BLOCKED | Physical cameras and Mi Stick were unavailable |
+| Verify redesigned UI safe areas/focus at 960x540 and 1280x720 | BLOCKED | Physical TV hardware was unavailable |
 | Open C500 `/stream1` fullscreen with OK | BLOCKED | The C500 and Mi Stick were unavailable |
 | Open C510W `/stream1` fullscreen with OK | BLOCKED | The C510W and Mi Stick were unavailable |
 | Return to the wall and restore focus with Back | BLOCKED | Mi Stick/remote was unavailable |
@@ -97,7 +101,9 @@ available for the current work. Every physical result therefore remains
 | Decoder and memory behavior under real concurrent streams | BLOCKED | Mi Stick and physical streams were unavailable |
 | Three-stream physical/fake-device grid observation | BLOCKED | No executable physical device was available |
 
-Automated tests may cover discovery parsing/deduplication, secure configuration,
-URI encoding/redaction, retry/state reducers, layout calculations and lifecycle
-coordination with fakes. Record their actual final result above, but do not use
-them to replace any blocked physical scenario.
+Automated tests cover discovery parsing/deduplication, secure configuration, URI
+encoding/redaction, retry/state reducers, layout calculations, lifecycle
+coordination, setup primary-action policy and fake UI focus/state behavior. The
+browse/edit, adaptive action and header-rescan instrumented test sources compile,
+but were not executed without a device. None replaces a blocked physical
+scenario.
