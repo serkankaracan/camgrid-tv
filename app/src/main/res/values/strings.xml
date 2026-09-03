@@ -59,7 +59,9 @@
     <string name="start_watching">Start watching</string>
     <string name="live_wall_title">Live camera wall</string>
     <string name="wall_back_hint">Back: camera setup  •  OK: fullscreen</string>
-    <string name="fullscreen_back_hint">Press Back to return to the camera wall</string>
+    <string name="fullscreen_view_mode_safe">View: Safe</string>
+    <string name="fullscreen_view_mode_fit">View: Fit</string>
+    <string name="fullscreen_view_mode_fill">View: Fill</string>
     <string name="connecting">Connecting…</string>
     <string name="live">Live</string>
     <string name="auth_failed">Credentials were rejected</string>

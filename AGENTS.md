@@ -12,6 +12,10 @@ Read `docs/IMPLEMENTATION_STATUS.md` before making changes.
 - Discovery uses ONVIF WS-Discovery. Grid uses `/stream2`; fullscreen first uses
   `/stream1` with a one-way `/stream2` compatibility fallback; audio is disabled.
   Do not hard-code a model, camera count or real IP.
+- Embedded setup/wall video uses `TextureView` so Compose overlays and focus stay
+  visible; fullscreen uses `SurfaceView`. Fullscreen defaults to a centered Safe
+  viewport at 90% screen width and height, cycles Safe → Fit → Fill by remote and
+  always preserves source aspect ratio; only Fill may crop.
 - Runtime communication is local-only. No backend, cloud login, analytics,
   crash reporting, recording, PTZ, audio, notifications, boot receiver, mobile UI,
   web UI, reverse engineering or private vendor API.
@@ -35,6 +39,7 @@ git status --short
 Run `.\gradlew.bat connectedDebugAndroidTest` only when a CLI-configured emulator
 or device is available. Record commands, exit codes, manual status and blockers
 in `docs/TEST_REPORT.md`; fake tests never count as physical camera or TV tests.
+Photographs from an older APK never count as validation of the current candidate.
 
 ## Phase protocol
 

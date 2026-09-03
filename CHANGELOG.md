@@ -53,6 +53,11 @@ All notable changes follow Keep a Changelog principles.
   known-working `/stream2` stream.
 - Replace `PlayerView`/`AndroidView` interop with Media3's Compose-native fitted
   video surface so non-16:9 displays preserve the camera's source aspect ratio.
+- Use `TextureView` for embedded setup/wall feeds so video cannot cover Compose
+  overlays or the stronger wall focus border; retain `SurfaceView` for fullscreen.
+- Move fullscreen camera/status information to an overscan-safe upper-right panel,
+  remove the persistent Back hint, and add a D-pad-operated Safe 90% → Fit → Fill
+  cycle. Every mode preserves aspect ratio and only Fill crops edges.
 - Rename the Gradle project and user-visible product/launcher branding to KARACAM
   while retaining the package and persistence identifiers for in-place updates.
 
@@ -71,7 +76,9 @@ All notable changes follow Keep a Changelog principles.
 
 - A user-run pre-fix physical test confirmed two concurrent wall streams and
   exposed a C510W `/stream1` fullscreen reconnect loop plus display-ratio
-  distortion. The corrected APK still requires a physical regression run.
+  distortion. Supplied photographs show the APK before the latest surface,
+  focus, information-panel and scale-control changes; the corrected APK still
+  requires a physical regression run.
 - Instrumented tests, API 37 permission revocation, measured logcat and
   decoder/memory evidence require an adb-connected run. The 15-minute stability,
   lifecycle, Wi-Fi recovery and wrong-password scenarios also remain pending on

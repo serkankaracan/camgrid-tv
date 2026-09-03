@@ -15,6 +15,7 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.compose.ContentFrame
 import androidx.media3.ui.compose.SURFACE_TYPE_SURFACE_VIEW
+import androidx.media3.ui.compose.SURFACE_TYPE_TEXTURE_VIEW
 
 typealias CameraVideoSurface = @Composable (cameraId: String, modifier: Modifier) -> Unit
 
@@ -31,6 +32,8 @@ fun Media3VideoSurface(
     modifier: Modifier = Modifier,
     keepScreenOn: Boolean = true,
     surfaceKey: Long? = null,
+    contentScale: ContentScale = ContentScale.Fit,
+    useTextureView: Boolean = false,
 ) {
     Box(
         modifier = modifier.fillMaxSize().background(Color.Black),
@@ -42,8 +45,13 @@ fun Media3VideoSurface(
                 modifier =
                     Modifier.fillMaxSize()
                         .then(if (keepScreenOn) Modifier.keepScreenOn() else Modifier),
-                surfaceType = SURFACE_TYPE_SURFACE_VIEW,
-                contentScale = ContentScale.Fit,
+                surfaceType =
+                    if (useTextureView) {
+                        SURFACE_TYPE_TEXTURE_VIEW
+                    } else {
+                        SURFACE_TYPE_SURFACE_VIEW
+                    },
+                contentScale = contentScale,
                 keepContentOnReset = false,
             )
         }

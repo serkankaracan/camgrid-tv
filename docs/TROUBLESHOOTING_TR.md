@@ -37,8 +37,20 @@ tamamen kapatın. Bazı kameralar eşzamanlı RTSP oturumlarını sınırlar.
   `/stream1` yeniden denenir.
 - Fallback sonrasında tam ekranın çözünürlüğü grid yayını kadar olabilir; bu,
   sonsuz yeniden bağlanma yerine uyumlu canlı görüntüyü koruyan beklenen davranıştır.
-- Tam ekranda görüntü ekranı doldurmak için esnetilmez. Kamera ve TV oranı farklıysa
-  üst-alt veya sağ-sol siyah şerit görülmesi normaldir.
+- Kurulum önizlemesi ve duvar kutucukları, durum overlay'i ile odak çerçevesinin
+  videonun arkasında kalmaması için `TextureView`; tam ekran ise `SurfaceView`
+  kullanır. Güncel APK'da odaktaki duvar kutucuğunun kalın çerçevesi videonun
+  üzerinde görünmelidir.
+- Tam ekran varsayılan **Görüntü: Güvenli** modunda kaynağı, genişliği ve
+  yüksekliği ekranın %90'ı olan ortalanmış alana sığdırır. Görüntü kontrolü
+  odaktayken Sağ veya OK ile **Güvenli → Sığdır →
+  Doldur**, Sol ile ters yönde geçin. Güvenli ve Sığdır kaynağın tamamını gösterir;
+  kamera ile TV oranı farklıysa üst-alt veya sağ-sol siyah şerit normaldir.
+  Doldur oranı koruyarak ekranı kaplar ve kenarları kırpar. Hiçbir mod görüntüyü
+  yatay ya da dikey esnetmez.
+- Kamera adı, yayın durumu ve görüntü modu tam ekranda sağ üstte görünür. Görünür
+  geri dönüş talimatının kaldırılması normaldir; Back hâlâ aynı duvar kutucuğuna
+  döner.
 - Uygulama güvenilirlik için RTP-over-TCP kullanır; RTSP yine de şifrelenmemiş
   olabilir. Yalnız güvenilir ve şifreli ev ağı kullanın.
 - Bir tile decoder hatası veriyorsa Android TV donanımının eşzamanlı H.264 decoder

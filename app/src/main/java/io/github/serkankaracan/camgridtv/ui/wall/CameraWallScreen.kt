@@ -12,6 +12,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.Layout
@@ -143,12 +147,16 @@ private fun CameraWallTile(
     videoSurface: CameraVideoSurface,
     modifier: Modifier = Modifier,
 ) {
+    var focused by remember(camera.id) { mutableStateOf(false) }
     TvFocusableSurface(
         onClick = onClick,
         requestInitialFocus = requestInitialFocus,
-        contentPadding = PaddingValues(3.dp),
+        contentPadding = PaddingValues(5.dp),
         shape = RoundedCornerShape(10.dp),
         scaleOnFocus = false,
+        focusedBorderWidth = 5.dp,
+        unfocusedBorderWidth = 0.dp,
+        onFocusedChange = { focused = it },
         modifier = modifier,
     ) {
         Box(
@@ -197,6 +205,12 @@ private fun CameraWallTile(
                 state = camera.playbackState,
                 modifier = Modifier.align(Alignment.BottomStart).padding(10.dp),
             )
+            if (focused) {
+                Box(
+                    modifier =
+                        Modifier.matchParentSize().testTag(UiTestTags.wallFocusIndicator(camera.id))
+                )
+            }
         }
     }
 }

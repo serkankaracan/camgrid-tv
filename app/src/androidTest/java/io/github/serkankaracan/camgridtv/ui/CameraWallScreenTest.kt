@@ -9,6 +9,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performKeyInput
@@ -19,12 +20,14 @@ import io.github.serkankaracan.camgridtv.ui.components.UiTestTags
 import io.github.serkankaracan.camgridtv.ui.fullscreen.FullscreenCameraScreen
 import io.github.serkankaracan.camgridtv.ui.fullscreen.FullscreenUiAction
 import io.github.serkankaracan.camgridtv.ui.fullscreen.FullscreenUiState
+import io.github.serkankaracan.camgridtv.ui.fullscreen.FullscreenViewMode
 import io.github.serkankaracan.camgridtv.ui.theme.CamGridTheme
 import io.github.serkankaracan.camgridtv.ui.wall.CameraWallScreen
 import io.github.serkankaracan.camgridtv.ui.wall.CameraWallUiAction
 import io.github.serkankaracan.camgridtv.ui.wall.CameraWallUiState
 import io.github.serkankaracan.camgridtv.ui.wall.WallCameraUiModel
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -92,9 +95,18 @@ class CameraWallScreenTest {
 
         val first = composeRule.onNodeWithTag(UiTestTags.wallCamera("camera-1"))
         first.assertIsFocused()
+        composeRule
+            .onNodeWithTag(UiTestTags.wallFocusIndicator("camera-1"), useUnmergedTree = true)
+            .assertExists()
         first.performKeyInput { pressKey(Key.DirectionRight) }
         val second = composeRule.onNodeWithTag(UiTestTags.wallCamera("camera-2"))
         second.assertIsFocused()
+        composeRule
+            .onNodeWithTag(UiTestTags.wallFocusIndicator("camera-1"), useUnmergedTree = true)
+            .assertDoesNotExist()
+        composeRule
+            .onNodeWithTag(UiTestTags.wallFocusIndicator("camera-2"), useUnmergedTree = true)
+            .assertExists()
         second.performKeyInput { pressKey(Key.DirectionDown) }
         val fourth = composeRule.onNodeWithTag(UiTestTags.wallCamera("camera-4"))
         fourth.assertIsFocused()
@@ -103,6 +115,84 @@ class CameraWallScreenTest {
         third.assertIsFocused()
         third.performKeyInput { pressKey(Key.DirectionUp) }
         first.assertIsFocused()
+    }
+
+    @Test
+    fun fullscreenUsesSafeViewportAndDpadCyclesViewModes() {
+        val viewMode = mutableStateOf(FullscreenViewMode.SAFE)
+        composeRule.setContent {
+            CamGridTheme {
+                FullscreenCameraScreen(
+                    state =
+                        FullscreenUiState(
+                            cameraId = "camera-1",
+                            displayName = "Camera 1",
+                            playbackState = PlaybackState.Live,
+                            viewMode = viewMode.value,
+                        ),
+                    onAction = { action ->
+                        when (action) {
+                            FullscreenUiAction.BackToWall -> Unit
+                            FullscreenUiAction.PreviousViewMode ->
+                                viewMode.value = viewMode.value.previous()
+                            FullscreenUiAction.NextViewMode ->
+                                viewMode.value = viewMode.value.next()
+                        }
+                    },
+                    videoSurface = { _, modifier ->
+                        Box(modifier = modifier.testTag("fake-fullscreen-video"))
+                    },
+                )
+            }
+        }
+
+        val screenBounds =
+            composeRule.onNodeWithTag(UiTestTags.FullscreenScreen).getUnclippedBoundsInRoot()
+        val safeVideoBounds =
+            composeRule.onNodeWithTag("fake-fullscreen-video").getUnclippedBoundsInRoot()
+        val metadataBounds =
+            composeRule.onNodeWithTag(UiTestTags.FullscreenMetadata).getUnclippedBoundsInRoot()
+        val viewModeAction = composeRule.onNodeWithTag(UiTestTags.FullscreenViewModeAction)
+        val screenWidth = (screenBounds.right - screenBounds.left).value
+        val screenHeight = (screenBounds.bottom - screenBounds.top).value
+        val safeVideoWidth = (safeVideoBounds.right - safeVideoBounds.left).value
+        val safeVideoHeight = (safeVideoBounds.bottom - safeVideoBounds.top).value
+        val safeHorizontalMargin = screenWidth * 0.05f
+        val safeVerticalMargin = screenHeight * 0.05f
+
+        assertEquals(screenWidth * 0.90f, safeVideoWidth, 1.5f)
+        assertEquals(screenHeight * 0.90f, safeVideoHeight, 1.5f)
+        assertEquals(
+            screenBounds.left.value + safeHorizontalMargin,
+            safeVideoBounds.left.value,
+            1.5f,
+        )
+        assertEquals(screenBounds.top.value + safeVerticalMargin, safeVideoBounds.top.value, 1.5f)
+        assertEquals(
+            screenBounds.right.value - safeHorizontalMargin,
+            safeVideoBounds.right.value,
+            1.5f,
+        )
+        assertEquals(
+            screenBounds.bottom.value - safeVerticalMargin,
+            safeVideoBounds.bottom.value,
+            1.5f,
+        )
+        assertTrue(metadataBounds.left.value >= screenBounds.left.value + screenWidth / 2f)
+        viewModeAction.assertIsFocused().performKeyInput { pressKey(Key.DirectionRight) }
+        composeRule.runOnIdle { assertEquals(FullscreenViewMode.FIT, viewMode.value) }
+        val fitVideoBounds =
+            composeRule.onNodeWithTag("fake-fullscreen-video").getUnclippedBoundsInRoot()
+        assertEquals(screenBounds.left.value, fitVideoBounds.left.value, 1.5f)
+        assertEquals(screenBounds.top.value, fitVideoBounds.top.value, 1.5f)
+        assertEquals(screenBounds.right.value, fitVideoBounds.right.value, 1.5f)
+        assertEquals(screenBounds.bottom.value, fitVideoBounds.bottom.value, 1.5f)
+
+        viewModeAction.performKeyInput { pressKey(Key.DirectionCenter) }
+        composeRule.runOnIdle { assertEquals(FullscreenViewMode.FILL, viewMode.value) }
+
+        viewModeAction.performKeyInput { pressKey(Key.DirectionRight) }
+        composeRule.runOnIdle { assertEquals(FullscreenViewMode.SAFE, viewMode.value) }
     }
 
     @Test

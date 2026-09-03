@@ -59,7 +59,9 @@
     <string name="start_watching">İzlemeyi başlat</string>
     <string name="live_wall_title">Canlı kamera duvarı</string>
     <string name="wall_back_hint">Geri: kamera kurulumu  •  OK: tam ekran</string>
-    <string name="fullscreen_back_hint">Kamera duvarına dönmek için Geri tuşuna basın</string>
+    <string name="fullscreen_view_mode_safe">Görüntü: Güvenli</string>
+    <string name="fullscreen_view_mode_fit">Görüntü: Sığdır</string>
+    <string name="fullscreen_view_mode_fill">Görüntü: Doldur</string>
     <string name="connecting">Bağlanıyor…</string>
     <string name="live">Canlı</string>
     <string name="auth_failed">Kimlik bilgileri reddedildi</string>

@@ -57,12 +57,24 @@ qualities. Authentication and missing local-route failures do not trigger the
 quality fallback. Returning recreates selected `/stream2` wall players and the
 next fullscreen session tries `/stream1` again.
 
-Players enable Media3's lower-priority decoder fallback. Video is rendered by
-Media3's Compose-native `ContentFrame` with `ContentScale.Fit` and a `SurfaceView`,
-so source pixel aspect ratio is preserved with letterbox/pillarbox on a differently
-shaped TV. Backgrounding, leaving the screen, or losing connectivity releases
-players and cancels retries. Transient failures use bounded exponential backoff
-with jitter; decoder exhaustion remains isolated to its slot.
+Players enable Media3's lower-priority decoder fallback. All video is hosted by
+Media3's Compose-native `ContentFrame`, but the surface type follows the UI role.
+The embedded setup preview and wall tiles use `TextureView` so Compose clipping,
+rounded containers, status overlays and the five-dp focus border remain above the
+video. Fullscreen alone uses `SurfaceView`.
+
+Fullscreen view state starts at `SAFE`: `ContentScale.Fit` inside a centered
+viewport whose width and height are each 90% of the logical screen. `FIT` uses the
+full logical viewport with `ContentScale.Fit`; `FILL` uses the full viewport with
+`ContentScale.Crop`. D-pad Right or OK advances
+`SAFE → FIT → FILL → SAFE`, while Left moves in reverse. Every mode preserves the
+source pixel aspect ratio; only `FILL` crops edges. The camera name, playback
+status and mode control share an overscan-safe upper-right panel. Back navigation
+remains active without a persistent on-screen return hint.
+
+Backgrounding, leaving the screen, or losing connectivity releases players and
+cancels retries. Transient failures use bounded exponential backoff with jitter;
+decoder exhaustion remains isolated to its slot.
 
 ## Local-network permission
 

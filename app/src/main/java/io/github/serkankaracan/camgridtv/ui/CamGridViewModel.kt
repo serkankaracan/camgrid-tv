@@ -30,6 +30,7 @@ import io.github.serkankaracan.camgridtv.ui.discovery.DiscoveryUiState
 import io.github.serkankaracan.camgridtv.ui.discovery.LocalNetworkPermissionUiState
 import io.github.serkankaracan.camgridtv.ui.fullscreen.FullscreenUiAction
 import io.github.serkankaracan.camgridtv.ui.fullscreen.FullscreenUiState
+import io.github.serkankaracan.camgridtv.ui.fullscreen.FullscreenViewMode
 import io.github.serkankaracan.camgridtv.ui.navigation.CamGridRoute
 import io.github.serkankaracan.camgridtv.ui.navigation.LocalNetworkAccessDecision
 import io.github.serkankaracan.camgridtv.ui.navigation.LocalNetworkAccessPolicy
@@ -93,6 +94,7 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
     private val savedCameraBootstrapGate = SavedCameraBootstrapAttemptGate()
     private var playbackStates: Map<String, PlaybackState> = emptyMap()
     private var playbackEngineGenerations: Map<String, Long> = emptyMap()
+    private var fullscreenViewMode: FullscreenViewMode = FullscreenViewMode.SAFE
     private var connectionStates: Map<String, ConnectionTestUiState> = emptyMap()
     private var credentialRecovery = CredentialRecoveryUiState.NotRequired
     private var selectionUpdateCameraId: String? = null
@@ -284,6 +286,14 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
         if (!allowsRouteAction(LocalRouteSurface.Fullscreen)) return
         when (action) {
             FullscreenUiAction.BackToWall -> restoreWall()
+            FullscreenUiAction.PreviousViewMode -> {
+                fullscreenViewMode = fullscreenViewMode.previous()
+                publish()
+            }
+            FullscreenUiAction.NextViewMode -> {
+                fullscreenViewMode = fullscreenViewMode.next()
+                publish()
+            }
         }
     }
 
@@ -1352,6 +1362,7 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
                         cameraId = camera.id,
                         displayName = camera.displayName,
                         playbackState = effectivePlaybackStates.getValue(camera.id),
+                        viewMode = fullscreenViewMode,
                     )
                 },
             playbackEngineGenerations = playbackEngineGenerations,

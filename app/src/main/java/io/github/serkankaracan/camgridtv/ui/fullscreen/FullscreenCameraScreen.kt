@@ -1,25 +1,35 @@
 package io.github.serkankaracan.camgridtv.ui.fullscreen
 
 import androidx.activity.compose.BackHandler
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.tv.material3.Button
 import androidx.tv.material3.Text
 import io.github.serkankaracan.camgridtv.R
 import io.github.serkankaracan.camgridtv.ui.components.CameraVideoSurface
@@ -39,6 +49,9 @@ fun FullscreenCameraScreen(
     },
 ) {
     BackHandler { onAction(FullscreenUiAction.BackToWall) }
+    val viewModeFocusRequester = remember { FocusRequester() }
+    LaunchedEffect(state.cameraId) { viewModeFocusRequester.requestFocus() }
+
     Box(
         modifier =
             modifier
@@ -46,64 +59,74 @@ fun FullscreenCameraScreen(
                 .background(CamGridPalette.BackgroundBottom)
                 .testTag(UiTestTags.FullscreenScreen)
     ) {
-        videoSurface(state.cameraId, Modifier.fillMaxSize())
-
-        Box(
-            modifier =
-                Modifier.align(Alignment.TopCenter)
-                    .fillMaxWidth()
-                    .height(128.dp)
-                    .background(
-                        Brush.verticalGradient(listOf(CamGridPalette.Scrim, Color.Transparent))
-                    )
-        )
-        Box(
-            modifier =
-                Modifier.align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .height(110.dp)
-                    .background(
-                        Brush.verticalGradient(listOf(Color.Transparent, CamGridPalette.Scrim))
-                    )
+        videoSurface(
+            state.cameraId,
+            Modifier.align(Alignment.Center).fillMaxSize(state.viewMode.viewportFraction),
         )
 
         Column(
             modifier =
-                Modifier.align(Alignment.TopStart)
+                Modifier.align(Alignment.TopEnd)
                     .padding(
                         horizontal = CamGridDimens.SafeHorizontal,
                         vertical = CamGridDimens.SafeVertical,
                     )
+                    .widthIn(min = 220.dp, max = 360.dp)
+                    .background(CamGridPalette.Scrim, RoundedCornerShape(12.dp))
+                    .padding(horizontal = 16.dp, vertical = 14.dp)
+                    .testTag(UiTestTags.FullscreenMetadata),
+            horizontalAlignment = Alignment.End,
         ) {
             Text(
                 text = state.displayName,
+                modifier = Modifier.fillMaxWidth(),
                 color = CamGridPalette.TextPrimary,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.End,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Text(
-                text = stringResource(R.string.fullscreen_back_hint),
-                modifier = Modifier.padding(top = 3.dp),
-                color = CamGridPalette.TextMuted,
-                fontSize = 13.sp,
-            )
-        }
-        Row(
-            modifier =
-                Modifier.align(Alignment.BottomStart)
-                    .padding(
-                        horizontal = CamGridDimens.SafeHorizontal,
-                        vertical = CamGridDimens.SafeVertical,
-                    ),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
             PlaybackStatusOverlay(
                 cameraId = state.cameraId,
                 state = state.playbackState,
+                modifier = Modifier.padding(top = 8.dp),
                 announceChanges = true,
             )
+            Button(
+                onClick = { onAction(FullscreenUiAction.NextViewMode) },
+                modifier =
+                    Modifier.padding(top = 12.dp)
+                        .focusRequester(viewModeFocusRequester)
+                        .onPreviewKeyEvent { event ->
+                            when (event.key) {
+                                Key.DirectionLeft -> {
+                                    if (event.type == KeyEventType.KeyDown) {
+                                        onAction(FullscreenUiAction.PreviousViewMode)
+                                    }
+                                    true
+                                }
+                                Key.DirectionRight -> {
+                                    if (event.type == KeyEventType.KeyDown) {
+                                        onAction(FullscreenUiAction.NextViewMode)
+                                    }
+                                    true
+                                }
+                                else -> false
+                            }
+                        }
+                        .testTag(UiTestTags.FullscreenViewModeAction),
+            ) {
+                Text(stringResource(state.viewMode.labelRes()))
+            }
         }
     }
 }
+
+@StringRes
+private fun FullscreenViewMode.labelRes(): Int =
+    when (this) {
+        FullscreenViewMode.SAFE -> R.string.fullscreen_view_mode_safe
+        FullscreenViewMode.FIT -> R.string.fullscreen_view_mode_fit
+        FullscreenViewMode.FILL -> R.string.fullscreen_view_mode_fill
+    }

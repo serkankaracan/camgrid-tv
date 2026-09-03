@@ -15,6 +15,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.lifecycle.Lifecycle
@@ -118,6 +119,7 @@ fun CamGridApp(
                             modifier = surfaceModifier,
                             keepScreenOn = false,
                             surfaceKey = playbackEngineGenerations[cameraId],
+                            useTextureView = true,
                         )
                     },
                 )
@@ -137,6 +139,7 @@ fun CamGridApp(
                                         camera.playbackState == PlaybackState.Live
                                 },
                             surfaceKey = playbackEngineGenerations[cameraId],
+                            useTextureView = true,
                         )
                     },
                 )
@@ -154,6 +157,12 @@ fun CamGridApp(
                                 modifier = surfaceModifier,
                                 keepScreenOn = fullscreen.playbackState == PlaybackState.Live,
                                 surfaceKey = playbackEngineGenerations[cameraId],
+                                contentScale =
+                                    if (fullscreen.viewMode.cropsToFill) {
+                                        ContentScale.Crop
+                                    } else {
+                                        ContentScale.Fit
+                                    },
                             )
                         },
                     )

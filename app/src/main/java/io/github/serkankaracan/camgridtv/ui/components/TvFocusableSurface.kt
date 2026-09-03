@@ -27,6 +27,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import io.github.serkankaracan.camgridtv.ui.theme.CamGridPalette
@@ -41,6 +42,9 @@ fun TvFocusableSurface(
     contentPadding: PaddingValues = PaddingValues(14.dp),
     shape: Shape = RoundedCornerShape(12.dp),
     scaleOnFocus: Boolean = true,
+    focusedBorderWidth: Dp = 3.dp,
+    unfocusedBorderWidth: Dp = 1.dp,
+    onFocusedChange: (Boolean) -> Unit = {},
     content: @Composable BoxScope.() -> Unit,
 ) {
     var focused by remember { mutableStateOf(false) }
@@ -72,6 +76,13 @@ fun TvFocusableSurface(
         } else {
             Modifier
         }
+    val borderWidth = if (focused) focusedBorderWidth else unfocusedBorderWidth
+    val borderModifier =
+        if (borderWidth > 0.dp) {
+            Modifier.border(BorderStroke(borderWidth, borderColor), shape)
+        } else {
+            Modifier
+        }
 
     LaunchedEffect(requestInitialFocus) {
         if (requestInitialFocus) focusRequester.requestFocus()
@@ -81,7 +92,10 @@ fun TvFocusableSurface(
         modifier =
             modifier
                 .focusRequester(focusRequester)
-                .onFocusChanged { focused = it.isFocused }
+                .onFocusChanged { focusState ->
+                    focused = focusState.isFocused
+                    onFocusedChange(focusState.isFocused)
+                }
                 .then(visualTransform)
                 .semantics {
                     role = Role.Button
@@ -89,10 +103,7 @@ fun TvFocusableSurface(
                 }
                 .clickable(enabled = enabled, onClick = onClick)
                 .background(containerColor, shape)
-                .border(
-                    BorderStroke(if (focused) 3.dp else 1.dp, borderColor),
-                    shape,
-                )
+                .then(borderModifier)
                 .padding(contentPadding),
         content = content,
     )
