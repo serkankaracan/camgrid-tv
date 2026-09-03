@@ -29,8 +29,16 @@ kaydı günceller. Bilinmeyen üreticinin uyumlu ONVIF cihazı reddedilmez. Kull
 kameraları ve adlarını seçer, ayrı Kamera Hesabı bilgilerini girer ve bağlantıyı
 sınar. Sonraki açılışta seçim korunur.
 
-Wall tüm kameraları kaydırmasız ekrana sığdırır. D-pad odağı tile'lar arasında
-taşır; OK odaktaki kamerayı tam ekran açar, Back önceki grid odağını geri yükler.
+Koyu kontrol-odası arayüzü keşif, güvenli kurulum ve canlı izleme adımlarını
+birbirinden ayırır. Kurulumun sağ panelindeki tek ana eylem önce **Bağlantıyı
+doğrula** olarak görünür; hesap seçili hedeflere kaydedilip en az bir `/stream2`
+yayını gerçekten **Canlı** olduğunda aynı eylem **N kamerayı izle**ye dönüşür.
+Kamera keşfedilmiş olması tek başına izlemeyi açmaz: seçili her kameraya geçerli
+bir hesap profili atanmış olmalıdır. Duvar tüm kameraları kaydırmasız ekrana
+sığdırır; üst çubuk canlı yayın sayısını gösterir. Çevrimdışı, yeniden bağlanan
+veya oynatılamayan yayın olduğunda üst çubuktaki **Kameraları yeniden tara**
+eylemi keşfe dönüp yeni tarama başlatır. D-pad odağı kutucuklar arasında taşır;
+OK odaktaki kamerayı tam ekran açar, Back önceki ızgara odağını geri yükler.
 Görüntüler kırpılmaz (`FIT`/letterbox). Ses renderer'ı kapalıdır.
 
 ## Gizlilik ve güvenlik
@@ -196,9 +204,15 @@ eşzamanlı oturum sınırı aksi halde yanıltıcı bağlantı/decoder hatası 
 ## Kumanda kullanımı
 
 - D-pad: listede, butonlarda ve kamera tile'larında gezinme
-- OK/Enter: seçim veya odaktaki kamerayı tam ekran açma
+- Metin alanında D-pad odağı: gezinme modunda alanı seçer; ekran klavyesini açmaz
+  ve yön tuşları imleç yerine komşu kontrollere geçer
+- Metin alanında OK/Enter: düzenleme modunu ve ekran klavyesini açar; parola
+  ekranda maskeli kalır
+- Metin alanında Back veya klavyedeki Bitti: düzenlemeyi kapatıp gezinme moduna
+  döner; kurulum ekranından çıkmaz
+- OK/Enter: diğer kontrollerde seçim veya odaktaki kamerayı tam ekran açma
 - Back: tam ekrandan aynı grid/odağa, gridden kamera kurulumuna, kurulumdan standart
-  Android TV çıkış davranışına dönme
+  Android TV çıkış davranışına dönme; ekran klavyesi açıksa önce klavyeyi kapatma
 
 ## Portlar ve yayınlar
 
@@ -250,5 +264,7 @@ CamGrid TV is a local-only Android TV viewer that discovers ONVIF cameras and
 shows selected RTSP streams in a remote-friendly dynamic grid. It stores camera
 credentials encrypted with an Android Keystore-backed AES/GCM key and contains no
 backend or telemetry. Grid streams use `/stream2`, fullscreen uses `/stream1`, and
-audio is disabled. It is unofficial and is not affiliated with or endorsed by
-TP-Link/Tapo.
+audio is disabled. Its remote-first fields stay in D-pad browse mode until OK
+opens editing, and setup uses one adaptive Verify → Watch action with a reachable
+wall rescan when feeds fail. It is unofficial and is not affiliated with or
+endorsed by TP-Link/Tapo.

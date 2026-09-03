@@ -285,6 +285,10 @@ C500 /stream2: PASS | FAIL | BLOCKED | NOT RUN — <ilk kare süresi>
 C510W /stream2: PASS | FAIL | BLOCKED | NOT RUN — <ilk kare süresi>
 İki yayın / 15 dakika: PASS | FAIL | BLOCKED | NOT RUN — <crash ve son durum>
 D-pad odağı: PASS | FAIL | BLOCKED | NOT RUN — <izlenen odak sırası>
+Metin alanı/ekran klavyesi: PASS | FAIL | BLOCKED | NOT RUN — <gezinme, OK, Back/Bitti sonucu>
+Uyarlanabilir Doğrula → N kamerayı izle: PASS | FAIL | BLOCKED | NOT RUN — <durum geçişi>
+Duvar üst çubuğu yeniden tarama: PASS | FAIL | BLOCKED | NOT RUN — <görünürlük, odak, yeni tarama>
+TV arayüzü/safe area: PASS | FAIL | BLOCKED | NOT RUN — <960x540 ve 1280x720 gözlemi>
 C500 /stream1 tam ekran: PASS | FAIL | BLOCKED | NOT RUN — <ilk kare süresi>
 C510W /stream1 tam ekran: PASS | FAIL | BLOCKED | NOT RUN — <ilk kare süresi>
 Back ile odak dönüşü: PASS | FAIL | BLOCKED | NOT RUN — <redakte kısa kanıt>
@@ -838,18 +842,27 @@ kapatın.
 4. C500 ve C510W kartlarını kumandanın D-pad/OK tuşlarıyla ayrı ayrı seçin.
    Seçili sayaçta beklediğiniz kamera sayısını doğrulayın; yinelenen kamera kaydı
    olmamalıdır.
-5. Tarama bittikten sonra **Kamera hesabı bilgileri gerekli** düğmesiyle kurulum
+5. Tarama bittikten sonra **Hesap kurulumuna devam et** düğmesiyle kurulum
    ekranına geçin. Kamera adlarını gerekirse IP içermeyen ayırt edilebilir adlarla
    düzenleyin.
-6. **Kamera hesabı kullanıcı adı** ve **Kamera hesabı parolası** alanlarına
-   bilgileri yalnız TV arayüzünde girin. Kameralar gerçekten aynı yerel hesabı
-   kullanmıyorsa **Bu hesabı seçili tüm kameralarda kullan** seçeneğini açmayın.
-7. Her seçili kamerada **Bağlantıyı test et**e basın. Beklenen, `/stream2`
-   önizlemesinin yaklaşık beş saniye görünmesi ve durumun **Canlı** olmasıdır.
-   Parola/URI/IP bilgisini fotoğrafa, sohbete veya rapora almayın.
-8. En az bir başarılı testten ve tüm seçili kameraların hesap profili
-   kaydedildikten sonra **İzlemeyi başlat**ı seçin. C500 ve C510W `/stream2`
-   tile'larının açıldığını doğrulayın.
+6. D-pad ile **Kullanıcı adı** alanına gelin. Yalnız odaklandığında ekran
+   klavyesinin kapalı kaldığını ve yön tuşlarının metin imlecine takılmadan komşu
+   kontrollere geçtiğini doğrulayın. OK ile düzenleme/klavyeyi açın; Back veya
+   klavyedeki **Bitti** ile gezinme moduna dönün. Aynısını **Parola** alanında
+   tekrarlayın; parolanın maskeli kaldığını doğrulayın ve bilgileri yalnız TV
+   arayüzünde girin. Kameralar gerçekten aynı yerel hesabı kullanmıyorsa **Bu
+   hesabı seçili tüm kameralarda kullan** seçeneğini açmayın.
+7. Sağ paneldeki tek tam genişlikte ana eylem başlangıçta **Bağlantıyı doğrula**
+   olarak görünür. Eksik kullanıcı adı/parola taslağında devre dışı, iki alan
+   tamamlandığında etkin olmalıdır. Buna veya ilgili kameradaki **Bağlantıyı test
+   et**e basın. Bulunmuş olmak yalnız ONVIF keşfinin başarılı olduğunu gösterir;
+   izleme için kimlik doğrulamalı `/stream2` önizlemesinin **Canlı** olması
+   gerekir. Parola/URI/IP bilgisini fotoğrafa, sohbete veya rapora almayın.
+8. En az bir başarılı testten ve seçili her kameraya hesap profili
+   kaydedildikten sonra aynı ana eylemin **N kamerayı izle**ye dönüştüğünü
+   doğrulayın ve seçin. Bu C500/C510W koşusunda beklenen metin **2 kamerayı izle**
+   olmalıdır; iki `/stream2` kutucuğunun açıldığını doğrulayın. Ayrı hesap modu
+   kullanılıyorsa her hedef kamera için profil kaydedilmeden bu geçiş oluşmaz.
 9. D-pad ile iki tile arasında gezinip OK ile `/stream1` tam ekranı açın. Back ile
    aynı tile odağına dönüldüğünü her iki kamera için kontrol edin.
 10. Ardından aşağıdaki 15 dakikalık dayanıklılık, lifecycle, ağ, yanlış parola,
@@ -899,9 +912,45 @@ kapatın.
 ### 5. Fiziksel D-pad odağı
 
 - Önkoşul: İki tile duvarda görünür ve Mi Stick kumandası bağlı.
-- Adım: Yön tuşlarıyla iki tile ve duvar eylemleri arasında dolaşın.
+- Adım: Yön tuşlarıyla iki tile ve duvar eylemleri arasında dolaşın. Yeniden
+  tarama eylemi görünüyorsa bir tile'dan Yukarı ile üst çubuktaki eyleme gidin.
 - Beklenen: Odak çerçevesi her zaman görünür, öngörülebilir ve dokunma gerektirmez.
 - Kanıt: İzlenen odak sırası; seri numarası içermeyen fotoğraf isteğe bağlıdır.
+
+### 5a. Metin alanı ve ekran klavyesi
+
+- Önkoşul: Kamera kurulum ekranı açık ve fiziksel kumanda bağlı.
+- Adım: D-pad ile Kullanıcı adı, Parola ve kamera adı alanlarına ayrı ayrı gelin;
+  gezinme modunda dört yönü deneyin. Her alanda klavye kapalıyken OK'a basın;
+  düzenlemeden önce Back'i, başka bir tekrarda klavyedeki **Bitti**yi kullanın.
+- Beklenen: Yalnız D-pad odağı ekran klavyesini açmaz ve oklar metin imlecine
+  takılmaz; OK düzenleme modunu ve klavyeyi açar; Back ile Bitti düzenlemeyi
+  kapatıp uygulamadan çıkmadan gezinmeye döndürür. Parola açık metin görünmez.
+- Kanıt: Alan başına gezinme/OK/Back/Bitti sonucu; girilen değerleri veya klavye
+  önerilerini fotoğrafa ve rapora almayın.
+
+### 5b. Uyarlanabilir doğrulama ve izleme eylemi
+
+- Önkoşul: En az iki kamera seçili ve kurulum ekranı açık.
+- Adım: Boş, tek alanı dolu ve iki alanı dolu hesap taslaklarında ana eylemi
+  gözleyin. Doğrulamayı başlatın ve `/stream2` Canlı durumuna ulaşmasını bekleyin.
+- Beklenen: Eksik taslakta **Bağlantıyı doğrula** devre dışıdır; geçerli kayıtlı
+  profil veya tamamlanmış taslakla etkinleşir. İşlem sürerken durum açıkça
+  gösterilir ve tamamlanınca odak aynı ana eyleme döner. Seçili her hedefte profil
+  ve en az bir başarılı canlı test olduğunda metin **N kamerayı izle** olur.
+- Kanıt: Kimlik bilgisi içermeyen eylem metni, durum sırası ve odak sonucu.
+
+### 5c. Duvar üst çubuğundan yeniden tarama
+
+- Önkoşul: Kamera duvarı açık; sağlıklı ve hata durumu ayrı ayrı üretilebilir.
+- Adım: Tüm yayınlar canlıyken üst çubuğu gözleyin. Sonra bir yayını Offline,
+  Retrying veya PlaybackFailed durumuna getirip D-pad Yukarı ile **Kameraları
+  yeniden tara** eylemine ulaşın ve OK'a basın.
+- Beklenen: Eylem sağlıklı duvarda gizli, belirtilen hata durumlarında görünür ve
+  kamera kutularıyla çakışmadan odaklanabilir. OK keşif ekranına döndürür ve yeni
+  taramayı başlatır.
+- Kanıt: Sağlıklı/hatalı görünürlük, odak yolu ve yeni taramanın başladığı; özel
+  ağ veya kamera bilgisi kaydedilmez.
 
 ### 6. C500 `/stream1` tam ekran
 
@@ -936,8 +985,10 @@ kapatın.
 - Önkoşul: İki yayın canlı; router ve kameralar güvenli biçimde erişilebilir.
 - Adım: Mi Stick Wi-Fi bağlantısını 30 saniye kesin, yeniden bağlayın ve iki
   tile'ın terminal durumlarına kadar geçen süreyi ölçün.
-- Beklenen: Tile'lar offline olur, sıkı retry döngüsü oluşmaz ve ağ dönünce
-  kontrollü biçimde yeniden bağlanır.
+- Beklenen: Tile'lar offline olur, üst çubukta yeniden tarama eylemi görünür,
+  sıkı retry döngüsü oluşmaz ve ağ dönünce kontrollü biçimde yeniden bağlanır.
+  Toparlanma ölçümü bitene kadar yeniden tarama eylemini çalıştırmayın; eylem
+  geçişini Senaryo 5c'de ayrı sınayın.
 - Kanıt: Kesinti süresi, toparlanma süresi ve crash/retry özeti.
 
 Wi-Fi kesintisi `WirelessPairing` veya `LegacyTcp5555` adb transportunu da
@@ -1300,10 +1351,12 @@ ekranından onaylayın.
 
 Özellikle şu sonuçları ayrı satırlarda tutun: Mi Stick
 `connectedDebugAndroidTest`, temiz başlangıç, C500 keşif, C510W keşif, C500
-`/stream2`, C510W `/stream2`, iki yayın/15 dakika, C500 `/stream1` tam ekran,
-C510W `/stream1` tam ekran, Mi Stick D-pad, lifecycle, API 37 izin iptali, ağ geri
-dönüşü, yanlış parola, force-stop/kalıcılık, log gizliliği ve decoder/bellek. Her
-fiziksel cihaz sonucu kanıt yürütülene kadar `BLOCKED` kalır.
+`/stream2`, C510W `/stream2`, iki yayın/15 dakika, metin alanı browse/edit ve IME,
+uyarlanabilir Doğrula → N kamerayı izle, duvar üst çubuğu yeniden tarama, 960x540
+ve 1280x720 safe-area/odak görünümü, C500 `/stream1` tam ekran, C510W `/stream1`
+tam ekran, Mi Stick D-pad, lifecycle, API 37 izin iptali, ağ geri dönüşü, yanlış
+parola, force-stop/kalıcılık, log gizliliği ve decoder/bellek. Her fiziksel cihaz
+sonucu kanıt yürütülene kadar `BLOCKED` kalır.
 
 `UsbStorageOnly` fallback'ini kullandıysanız yukarıdaki adb bloğunu çalıştırmayın.
 USB belleği güvenle çıkarın, dosya yöneticisinin **Bilinmeyen uygulamaları yükle**

@@ -22,6 +22,7 @@ data class SetupCameraUiModel(
     val displayName: String,
     val detail: String? = null,
     val selected: Boolean = true,
+    val hasCredentialProfile: Boolean = false,
     val connectionState: ConnectionTestUiState = ConnectionTestUiState.NotTested,
 )
 

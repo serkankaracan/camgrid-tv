@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="text_field_browse_state">Navigation mode. Press OK to edit.</string>
+    <string name="text_field_editing_state">Editing</string>
+    <string name="text_field_edit_action">Edit text</string>
     <string name="app_name">CamGrid TV</string>
     <string name="permission_title">Local network permission required</string>
     <string name="permission_body">CamGrid TV needs local network access to discover and play cameras on this trusted network. No data leaves your device.</string>
@@ -7,6 +10,14 @@
     <string name="permission_settings">Open app settings</string>
     <string name="scan_title">Find cameras</string>
     <string name="scanning">Searching for cameras…</string>
+    <string name="scan_ready_body">Scan this trusted local network for ONVIF cameras. Your camera account stays on this TV.</string>
+    <string name="scanning_body">Listening for ONVIF cameras on the local network. Devices appear as they respond.</string>
+    <string name="discovery_step_label">01  CAMERA DISCOVERY</string>
+    <string name="discovery_results">Camera discovery</string>
+    <string name="discovery_results_subtitle">Choose the cameras to include in your live wall.</string>
+    <string name="continue_to_account">Continue to account setup</string>
+    <string name="camera_selected">Selected</string>
+    <string name="camera_available">Available</string>
     <string name="scan_again">Scan again</string>
     <string name="scan_cancel">Cancel scan</string>
     <string name="no_cameras_title">No cameras found</string>
@@ -17,16 +28,38 @@
     <string name="discovery_transport_unavailable">The local discovery transport could not start. Check local network permission and try again.</string>
     <string name="generic_onvif_camera">ONVIF camera</string>
     <string name="camera_account_required">Camera account details required</string>
-    <string name="camera_account_explanation">Use the separate Camera Account created in the camera app, not your cloud, Wi-Fi, or router password.</string>
+    <string name="camera_account_explanation">Use the separate Camera Account created in the camera app. Focus a field, then press OK to open the keyboard.</string>
+    <string name="setup_step_label">02  SECURE SETUP</string>
+    <string name="setup_title">Connect your cameras</string>
+    <string name="setup_subtitle">Add the camera account, verify one live feed, then open the wall.</string>
+    <string name="selected_cameras_title">Camera roster</string>
+    <string name="selected_cameras_subtitle">Press OK on a row to include or exclude it.</string>
+    <string name="camera_account_panel_title">Camera account</string>
+    <string name="rename_camera">Rename</string>
+    <string name="verify_connection">Verify connection</string>
+    <string name="not_tested">Not tested</string>
+    <string name="credentials_needed_short">Account needed</string>
+    <string name="auth_failed_short">Rejected</string>
+    <string name="setup_ready">Ready. Open the live camera wall.</string>
+    <string name="setup_select_camera">Select at least one camera.</string>
+    <string name="setup_enter_credentials">Enter the camera account, then choose Verify connection.</string>
+    <string name="setup_verify_before_start">Choose Verify connection. Start is enabled when the feed becomes Live.</string>
+    <string name="setup_testing_connection">Verifying the RTSP feed…</string>
+    <string name="setup_authentication_help">The camera rejected this account. Check the Camera Account username and password.</string>
+    <string name="setup_connection_help">The feed could not be opened. Check camera power, network, and RTSP support.</string>
+    <string name="setup_recovery_blocked">Clear the locked stored account before continuing.</string>
     <string name="credential_recovery_required">Stored camera credentials can no longer be unlocked. Clear them, then enter the camera account again. No password was recovered or exposed.</string>
     <string name="credential_recovery_clear_failed">The local cleanup did not finish. Retry before entering credentials.</string>
     <string name="credential_recovery_clear">Clear stored credentials</string>
     <string name="credential_recovery_clearing">Clearing stored credentials…</string>
-    <string name="username">Camera account username</string>
-    <string name="password">Camera account password</string>
+    <string name="username">Username</string>
+    <string name="password">Password</string>
     <string name="use_for_selected">Use this account for all selected cameras</string>
     <string name="test_connection">Test connection</string>
     <string name="start_watching">Start watching</string>
+    <string name="live_wall_title">Live camera wall</string>
+    <string name="wall_back_hint">Back: camera setup  •  OK: fullscreen</string>
+    <string name="fullscreen_back_hint">Press Back to return to the camera wall</string>
     <string name="connecting">Connecting…</string>
     <string name="live">Live</string>
     <string name="auth_failed">Credentials were rejected</string>
@@ -38,6 +71,18 @@
     <plurals name="selected_camera_count">
         <item quantity="one">%1$d camera selected</item>
         <item quantity="other">%1$d cameras selected</item>
+    </plurals>
+    <plurals name="discovered_camera_count">
+        <item quantity="one">%1$d camera found</item>
+        <item quantity="other">%1$d cameras found</item>
+    </plurals>
+    <plurals name="watch_camera_count">
+        <item quantity="one">Watch %1$d camera</item>
+        <item quantity="other">Watch %1$d cameras</item>
+    </plurals>
+    <plurals name="live_camera_count">
+        <item quantity="one">%1$d live</item>
+        <item quantity="other">%1$d live</item>
     </plurals>
     <string name="edit_camera_name">Edit camera name</string>
     <string name="save">Save</string>

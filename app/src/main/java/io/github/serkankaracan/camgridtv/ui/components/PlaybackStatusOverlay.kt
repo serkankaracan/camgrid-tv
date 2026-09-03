@@ -3,14 +3,17 @@ package io.github.serkankaracan.camgridtv.ui.components
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import io.github.serkankaracan.camgridtv.R
 import io.github.serkankaracan.camgridtv.playback.PlaybackState
@@ -20,14 +23,22 @@ fun PlaybackStatusOverlay(
     cameraId: String,
     state: PlaybackState,
     modifier: Modifier = Modifier,
+    announceChanges: Boolean = false,
 ) {
     val presentation = playbackStatusPresentation(state) ?: return
     Text(
         text = stringResource(presentation.labelRes),
         modifier =
             modifier
-                .background(presentation.background.copy(alpha = 0.88f))
-                .padding(horizontal = 10.dp, vertical = 6.dp)
+                .then(
+                    if (announceChanges) {
+                        Modifier.semantics { liveRegion = LiveRegionMode.Polite }
+                    } else {
+                        Modifier
+                    }
+                )
+                .background(presentation.background.copy(alpha = 0.92f), RoundedCornerShape(50))
+                .padding(horizontal = 11.dp, vertical = 6.dp)
                 .testTag(UiTestTags.playbackStatus(cameraId)),
         color = Color.White,
         fontSize = 16.sp,
@@ -38,14 +49,24 @@ fun PlaybackStatusOverlay(
 fun ConnectionStatusLabel(
     cameraId: String,
     labelRes: Int,
-    isError: Boolean,
+    color: Color,
     modifier: Modifier = Modifier,
     testTag: String = UiTestTags.connectionStatus(cameraId),
+    announceChanges: Boolean = false,
 ) {
     Text(
         text = stringResource(labelRes),
-        modifier = modifier.testTag(testTag),
-        color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+        modifier =
+            modifier
+                .then(
+                    if (announceChanges) {
+                        Modifier.semantics { liveRegion = LiveRegionMode.Polite }
+                    } else {
+                        Modifier
+                    }
+                )
+                .testTag(testTag),
+        color = color,
         fontSize = 16.sp,
     )
 }
@@ -59,7 +80,7 @@ private fun playbackStatusPresentation(state: PlaybackState): PlaybackStatusPres
     when (state) {
         PlaybackState.Idle -> null
         PlaybackState.Connecting ->
-            PlaybackStatusPresentation(R.string.connecting, Color(0xFF23415D))
+            PlaybackStatusPresentation(R.string.connecting, Color(0xFF1D5260))
         PlaybackState.Live -> PlaybackStatusPresentation(R.string.live, Color(0xFF12634F))
         is PlaybackState.Retrying ->
             PlaybackStatusPresentation(R.string.retrying, Color(0xFF6B4C12))

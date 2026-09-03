@@ -40,6 +40,7 @@ fun Media3PlayerViewHost(
     AndroidView(
         factory = { context ->
             PlayerView(context).also { view ->
+                view.setEnableComposeSurfaceSyncWorkaround(true)
                 view.useController = false
                 view.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
                 view.isFocusable = false

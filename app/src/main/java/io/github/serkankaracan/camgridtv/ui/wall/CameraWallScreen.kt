@@ -1,27 +1,40 @@
 package io.github.serkankaracan.camgridtv.ui.wall
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Button
-import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import io.github.serkankaracan.camgridtv.R
 import io.github.serkankaracan.camgridtv.playback.PlaybackState
+import io.github.serkankaracan.camgridtv.ui.components.CamGridBackground
 import io.github.serkankaracan.camgridtv.ui.components.CameraVideoSurface
 import io.github.serkankaracan.camgridtv.ui.components.EmptyCameraVideoSurface
 import io.github.serkankaracan.camgridtv.ui.components.PlaybackStatusOverlay
+import io.github.serkankaracan.camgridtv.ui.components.StatusPill
 import io.github.serkankaracan.camgridtv.ui.components.TvFocusableSurface
 import io.github.serkankaracan.camgridtv.ui.components.UiTestTags
+import io.github.serkankaracan.camgridtv.ui.theme.CamGridDimens
+import io.github.serkankaracan.camgridtv.ui.theme.CamGridPalette
 import kotlin.math.roundToInt
 
 @Composable
@@ -34,70 +47,93 @@ fun CameraWallScreen(
     },
 ) {
     BackHandler { onAction(CameraWallUiAction.BackToCameraSetup) }
-    Surface(modifier = modifier.fillMaxSize().testTag(UiTestTags.WallScreen)) {
-        val grid = GridLayoutCalculator.calculate(state.cameras.size)
-        val initialFocusCameraId =
-            state.restoreFocusCameraId?.takeIf { candidateId ->
-                state.cameras.any { camera -> camera.id == candidateId }
-            } ?: state.cameras.firstOrNull()?.id
-        val showRescan =
-            state.cameras.any { camera ->
-                camera.playbackState == PlaybackState.Offline ||
-                    camera.playbackState is PlaybackState.Retrying ||
-                    camera.playbackState is PlaybackState.PlaybackFailed
+    val grid = GridLayoutCalculator.calculate(state.cameras.size)
+    val initialFocusCameraId =
+        state.restoreFocusCameraId?.takeIf { candidateId ->
+            state.cameras.any { camera -> camera.id == candidateId }
+        } ?: state.cameras.firstOrNull()?.id
+    val liveCount = state.cameras.count { it.playbackState == PlaybackState.Live }
+    val showRescan =
+        state.cameras.any { camera ->
+            camera.playbackState == PlaybackState.Offline ||
+                camera.playbackState is PlaybackState.Retrying ||
+                camera.playbackState is PlaybackState.PlaybackFailed
+        }
+
+    CamGridBackground(modifier = modifier.fillMaxSize().testTag(UiTestTags.WallScreen)) {
+        Column(
+            modifier =
+                Modifier.fillMaxSize()
+                    .padding(
+                        horizontal = CamGridDimens.SafeHorizontal,
+                        vertical = CamGridDimens.SafeVertical,
+                    )
+        ) {
+            Row(
+                modifier =
+                    Modifier.fillMaxWidth().padding(start = 3.dp, end = 3.dp, bottom = 10.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.live_wall_title),
+                        color = CamGridPalette.TextPrimary,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = stringResource(R.string.wall_back_hint),
+                        color = CamGridPalette.TextMuted,
+                        fontSize = 13.sp,
+                    )
+                }
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    StatusPill(
+                        text =
+                            pluralStringResource(
+                                R.plurals.live_camera_count,
+                                liveCount,
+                                liveCount,
+                            ),
+                        color =
+                            if (liveCount > 0) {
+                                CamGridPalette.Success
+                            } else {
+                                CamGridPalette.TextMuted
+                            },
+                    )
+                    if (showRescan) {
+                        Button(
+                            onClick = { onAction(CameraWallUiAction.RescanCameras) },
+                            modifier = Modifier.testTag(UiTestTags.WallRescanAction),
+                        ) {
+                            Text(stringResource(R.string.scan_again))
+                        }
+                    }
+                }
             }
-        Box(modifier = Modifier.fillMaxSize()) {
+
             CameraGrid(
                 gridLayout = grid,
-                modifier =
-                    Modifier.fillMaxSize()
-                        .padding(
-                            horizontal = WALL_GRID_SAFE_HORIZONTAL_PADDING,
-                            vertical = WALL_GRID_SAFE_VERTICAL_PADDING,
-                        ),
+                modifier = Modifier.weight(1f).fillMaxWidth(),
             ) {
                 state.cameras.forEach { camera ->
                     CameraWallTile(
                         camera = camera,
                         requestInitialFocus = camera.id == initialFocusCameraId,
-                        onClick = {
-                            onAction(CameraWallUiAction.OpenFullscreen(camera.id))
-                        },
+                        onClick = { onAction(CameraWallUiAction.OpenFullscreen(camera.id)) },
                         videoSurface = videoSurface,
-                        modifier = Modifier.padding(6.dp).testTag(UiTestTags.wallCamera(camera.id)),
+                        modifier = Modifier.padding(5.dp).testTag(UiTestTags.wallCamera(camera.id)),
                     )
-                }
-            }
-            if (showRescan) {
-                Button(
-                    onClick = { onAction(CameraWallUiAction.RescanCameras) },
-                    modifier =
-                        Modifier.align(Alignment.BottomEnd)
-                            .padding(
-                                horizontal = RESCAN_SAFE_HORIZONTAL_PADDING,
-                                vertical = RESCAN_SAFE_VERTICAL_PADDING,
-                            )
-                            .testTag(UiTestTags.WallRescanAction),
-                ) {
-                    Text(stringResource(R.string.scan_again))
                 }
             }
         }
     }
 }
-
-private val TV_SAFE_HORIZONTAL_PADDING = 48.dp
-private val TV_SAFE_VERTICAL_PADDING = 27.dp
-
-// TV Material buttons scale to 1.1 while focused. The extra inset keeps the scaled button and
-// focus treatment inside the 48 dp / 27 dp title-safe boundary.
-private val RESCAN_SAFE_HORIZONTAL_PADDING = 56.dp
-private val RESCAN_SAFE_VERTICAL_PADDING = 32.dp
-
-// Each tile already has a 6 dp gutter. Subtract it here so the outer focus border lands exactly
-// inside the TV overscan-safe area while preserving as much camera-wall space as possible.
-private val WALL_GRID_SAFE_HORIZONTAL_PADDING = TV_SAFE_HORIZONTAL_PADDING - 6.dp
-private val WALL_GRID_SAFE_VERTICAL_PADDING = TV_SAFE_VERTICAL_PADDING - 6.dp
 
 @Composable
 private fun CameraWallTile(
@@ -110,19 +146,58 @@ private fun CameraWallTile(
     TvFocusableSurface(
         onClick = onClick,
         requestInitialFocus = requestInitialFocus,
+        contentPadding = PaddingValues(3.dp),
+        shape = RoundedCornerShape(10.dp),
+        scaleOnFocus = false,
         modifier = modifier,
     ) {
-        videoSurface(camera.id, Modifier.fillMaxSize())
-        Text(
-            text = camera.displayName,
-            modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
-            fontSize = 17.sp,
-        )
-        PlaybackStatusOverlay(
-            cameraId = camera.id,
-            state = camera.playbackState,
-            modifier = Modifier.align(Alignment.BottomStart),
-        )
+        Box(
+            modifier =
+                Modifier.fillMaxSize()
+                    .background(CamGridPalette.BackgroundBottom, RoundedCornerShape(7.dp))
+        ) {
+            videoSurface(camera.id, Modifier.fillMaxSize())
+            Row(
+                modifier =
+                    Modifier.align(Alignment.TopStart)
+                        .fillMaxWidth()
+                        .background(CamGridPalette.Scrim)
+                        .padding(horizontal = 11.dp, vertical = 7.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = camera.displayName,
+                    modifier = Modifier.weight(1f),
+                    color = CamGridPalette.TextPrimary,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (camera.playbackState == PlaybackState.Live) {
+                    Text(
+                        text = stringResource(R.string.live),
+                        modifier =
+                            Modifier.padding(start = 8.dp)
+                                .background(
+                                    CamGridPalette.Success.copy(alpha = 0.18f),
+                                    RoundedCornerShape(50),
+                                )
+                                .padding(horizontal = 8.dp, vertical = 3.dp),
+                        color = CamGridPalette.Success,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.8.sp,
+                    )
+                }
+            }
+            PlaybackStatusOverlay(
+                cameraId = camera.id,
+                state = camera.playbackState,
+                modifier = Modifier.align(Alignment.BottomStart).padding(10.dp),
+            )
+        }
     }
 }
 

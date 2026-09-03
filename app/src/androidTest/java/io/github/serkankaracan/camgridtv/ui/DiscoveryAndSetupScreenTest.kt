@@ -220,6 +220,170 @@ class DiscoveryAndSetupScreenTest {
     }
 
     @Test
+    fun setupStartsOnCameraAndExplainsTheRequiredVerificationStep() {
+        var receivedAction: CameraSetupUiAction? = null
+        val cameras =
+            listOf(
+                SetupCameraUiModel(id = "first", displayName = "Front door"),
+                SetupCameraUiModel(id = "second", displayName = "Garden"),
+            )
+        val setupState =
+            mutableStateOf(
+                CameraSetupUiState(
+                    cameras = cameras,
+                    username = "camera-user",
+                    password = listOf("test", "fixture").joinToString("-"),
+                )
+            )
+        composeRule.setContent {
+            CamGridTheme {
+                CameraSetupScreen(
+                    state = setupState.value,
+                    onAction = { action ->
+                        receivedAction = action
+                        if (action == CameraSetupUiAction.TestConnection("first")) {
+                            setupState.value =
+                                CameraSetupUiState(
+                                    cameras =
+                                        cameras.mapIndexed { index, camera ->
+                                            if (index == 0) {
+                                                camera.copy(
+                                                    connectionState = ConnectionTestUiState.Testing
+                                                )
+                                            } else {
+                                                camera
+                                            }
+                                        },
+                                    username = "camera-user",
+                                    password = listOf("test", "fixture").joinToString("-"),
+                                    connectionPreviewCameraId = "first",
+                                )
+                        }
+                    },
+                )
+            }
+        }
+
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        composeRule.onNodeWithTag(UiTestTags.setupCamera("first")).assertIsFocused()
+        composeRule
+            .onNodeWithTag(UiTestTags.SetupReadiness)
+            .assertTextEquals(context.getString(R.string.setup_verify_before_start))
+        val primaryAction = composeRule.onNodeWithTag(UiTestTags.StartWatchingAction)
+        primaryAction
+            .assertTextEquals(context.getString(R.string.verify_connection))
+            .assertIsEnabled()
+            .performSemanticsAction(SemanticsActions.RequestFocus)
+            .assertIsFocused()
+            .performClick()
+
+        composeRule.runOnIdle {
+            assertTrue(receivedAction == CameraSetupUiAction.TestConnection("first"))
+        }
+        primaryAction.assertIsNotEnabled()
+        composeRule.runOnIdle {
+            setupState.value =
+                CameraSetupUiState(
+                    cameras =
+                        cameras.mapIndexed { index, camera ->
+                            camera.copy(
+                                hasCredentialProfile = true,
+                                connectionState =
+                                    if (index == 0) {
+                                        ConnectionTestUiState.Connected
+                                    } else {
+                                        ConnectionTestUiState.NotTested
+                                    },
+                            )
+                        },
+                    canStartWatching = true,
+                )
+        }
+        composeRule
+            .onNodeWithTag(UiTestTags.StartWatchingAction)
+            .assertTextEquals(
+                context.resources.getQuantityString(R.plurals.watch_camera_count, 2, 2)
+            )
+            .assertIsEnabled()
+            .assertIsFocused()
+            .performClick()
+        composeRule.runOnIdle {
+            assertTrue(receivedAction == CameraSetupUiAction.StartWatching)
+        }
+    }
+
+    @Test
+    fun primaryVerificationRetriesThePreviewFailureBeforeAnUntestedCamera() {
+        var receivedAction: CameraSetupUiAction? = null
+        composeRule.setContent {
+            CamGridTheme {
+                CameraSetupScreen(
+                    state =
+                        CameraSetupUiState(
+                            cameras =
+                                listOf(
+                                    SetupCameraUiModel(
+                                        id = "untested",
+                                        displayName = "Garden",
+                                    ),
+                                    SetupCameraUiModel(
+                                        id = "failed",
+                                        displayName = "Front door",
+                                        connectionState =
+                                            ConnectionTestUiState.AuthenticationFailed,
+                                    ),
+                                ),
+                            username = "camera-user",
+                            password = listOf("retry", "fixture").joinToString("-"),
+                            connectionPreviewCameraId = "failed",
+                        ),
+                    onAction = { receivedAction = it },
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag(UiTestTags.StartWatchingAction).assertIsEnabled().performClick()
+
+        composeRule.runOnIdle {
+            assertTrue(receivedAction == CameraSetupUiAction.TestConnection("failed"))
+        }
+    }
+
+    @Test
+    fun successfulVerificationMakesTheLiveWallActionExplicit() {
+        composeRule.setContent {
+            CamGridTheme {
+                CameraSetupScreen(
+                    state =
+                        CameraSetupUiState(
+                            cameras =
+                                listOf(
+                                    SetupCameraUiModel(
+                                        id = "live",
+                                        displayName = "Front door",
+                                        connectionState = ConnectionTestUiState.Connected,
+                                    )
+                                ),
+                            canStartWatching = true,
+                        ),
+                    onAction = {},
+                )
+            }
+        }
+
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        composeRule
+            .onNodeWithTag(UiTestTags.SetupReadiness)
+            .assertTextEquals(context.getString(R.string.setup_ready))
+        composeRule
+            .onNodeWithTag(UiTestTags.StartWatchingAction)
+            .assertTextEquals(
+                context.resources.getQuantityString(R.plurals.watch_camera_count, 1, 1)
+            )
+            .assertIsEnabled()
+    }
+
+    @Test
     fun passwordFieldIsMarkedSensitiveAndVisuallyTransformed() {
         val password = mutableStateOf(listOf("screen", "-", "fixture").joinToString(""))
         composeRule.setContent {
@@ -274,7 +438,11 @@ class DiscoveryAndSetupScreenTest {
         composeRule.onNodeWithTag(UiTestTags.CredentialRecoveryPanel).assertExists()
         composeRule.onNodeWithTag(UiTestTags.UsernameField).assertIsNotEnabled()
         composeRule.onNodeWithTag(UiTestTags.PasswordField).assertIsNotEnabled()
-        composeRule.onNodeWithTag(UiTestTags.ClearStoredCredentialsAction).performClick()
+        composeRule
+            .onNodeWithTag(UiTestTags.ClearStoredCredentialsAction)
+            .assertIsDisplayed()
+            .assertIsFocused()
+            .performClick()
 
         composeRule.runOnIdle { assertTrue(clearRequested) }
     }

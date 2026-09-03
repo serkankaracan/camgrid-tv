@@ -1293,6 +1293,7 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
                                 displayName = camera.displayName,
                                 detail = camera.model ?: camera.manufacturer,
                                 selected = camera.selected,
+                                hasCredentialProfile = camera.credentialProfileId != null,
                                 connectionState =
                                     connectionStates[camera.id] ?: ConnectionTestUiState.NotTested,
                             )

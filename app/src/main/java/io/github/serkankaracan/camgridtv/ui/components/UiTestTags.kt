@@ -15,6 +15,7 @@ object UiTestTags {
     const val ClearStoredCredentialsAction = "clear_stored_credentials_action"
     const val SharedProfileToggle = "shared_profile_toggle"
     const val StartWatchingAction = "start_watching_action"
+    const val SetupReadiness = "setup_readiness"
     const val SetupCameraList = "setup_camera_list"
     const val SetupConnectionPreview = "setup_connection_preview"
     const val SetupConnectionPreviewStatus = "setup_connection_preview_status"

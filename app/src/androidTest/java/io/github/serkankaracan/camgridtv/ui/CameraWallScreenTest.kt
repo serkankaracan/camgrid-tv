@@ -11,7 +11,6 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
 import androidx.test.espresso.Espresso
@@ -146,7 +145,10 @@ class CameraWallScreenTest {
             }
         }
 
-        composeRule.onNodeWithTag(UiTestTags.WallRescanAction).performClick()
+        val retryingTile = composeRule.onNodeWithTag(UiTestTags.wallCamera("camera-1"))
+        val rescanAction = composeRule.onNodeWithTag(UiTestTags.WallRescanAction)
+        retryingTile.assertIsFocused().performKeyInput { pressKey(Key.DirectionUp) }
+        rescanAction.assertIsFocused().performKeyInput { pressKey(Key.DirectionCenter) }
         composeRule.runOnIdle {
             assertEquals(CameraWallUiAction.RescanCameras, receivedAction)
         }

@@ -19,6 +19,8 @@ All notable changes follow Keep a Changelog principles.
 - Connectivity monitoring, bounded retry/backoff, app lifecycle recovery and
   tile-local decoder error handling.
 - Windows/PowerShell build, test, secret-hygiene and GitHub Actions workflows.
+- Dark control-room discovery, setup, live-wall and fullscreen presentation with
+  explicit focus, selection, readiness and live-state treatments.
 
 ### Security
 
@@ -39,6 +41,12 @@ All notable changes follow Keep a Changelog principles.
   non-retrying UI states.
 - Keep the tested `/stream2` visible briefly in setup, retain D-pad focus during
   the test, and keep TV overlays within the overscan-safe area.
+- Keep TV text fields in D-pad browse mode until OK/Enter explicitly opens edit
+  mode and the software keyboard; Back or IME Done returns to browse mode.
+- Replace the inactive start control with one adaptive Verify connection → Watch
+  N cameras action, including deterministic failure-first targeting and focus
+  restoration after asynchronous verification.
+- Keep conditional wall rescanning in a reachable, non-overlapping header action.
 
 ### Verification
 
