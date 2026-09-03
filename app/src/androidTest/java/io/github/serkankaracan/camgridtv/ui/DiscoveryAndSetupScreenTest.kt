@@ -274,6 +274,37 @@ class DiscoveryAndSetupScreenTest {
         composeRule.runOnIdle { assertTrue(clearRequested) }
     }
 
+    @Test
+    fun activeConnectionTestLocksCredentialsAndAdditionalTests() {
+        composeRule.setContent {
+            CamGridTheme {
+                CameraSetupScreen(
+                    state =
+                        CameraSetupUiState(
+                            cameras =
+                                listOf(
+                                    SetupCameraUiModel(
+                                        id = "testing",
+                                        displayName = "Testing camera",
+                                        connectionState = ConnectionTestUiState.Testing,
+                                    ),
+                                    SetupCameraUiModel(
+                                        id = "other",
+                                        displayName = "Other camera",
+                                    ),
+                                )
+                        ),
+                    onAction = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag(UiTestTags.UsernameField).assertIsNotEnabled()
+        composeRule.onNodeWithTag(UiTestTags.PasswordField).assertIsNotEnabled()
+        composeRule.onNodeWithTag(UiTestTags.testConnection("testing")).assertIsNotEnabled()
+        composeRule.onNodeWithTag(UiTestTags.testConnection("other")).assertIsNotEnabled()
+    }
+
     private fun cameraFixtures(count: Int): List<DiscoveryCameraUiModel> =
         (1..count).map { index ->
             DiscoveryCameraUiModel(

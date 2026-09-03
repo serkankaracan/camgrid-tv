@@ -65,6 +65,26 @@ class CameraSelectionRepositoryTest {
         assertNull(repository.current().cameras.single().credentialProfileId)
     }
 
+    @Test
+    fun `credential recovery detaches every camera and removes profile metadata`() = runTest {
+        val repository = InMemoryCameraSelectionRepository()
+        val profile =
+            CredentialProfile(
+                id = "shared",
+                displayName = "Shared camera account",
+                createdAtEpochMillis = 1L,
+            )
+        repository.upsertCredentialProfile(profile)
+        repository.upsertCamera(first.copy(credentialProfileId = profile.id))
+        repository.upsertCamera(second.copy(credentialProfileId = profile.id))
+
+        repository.clearCredentialProfiles()
+
+        val recovered = repository.current()
+        assertTrue(recovered.credentialProfiles.isEmpty())
+        assertTrue(recovered.cameras.all { it.credentialProfileId == null })
+    }
+
     private fun camera(id: String) =
         CameraDevice(
             id = id,

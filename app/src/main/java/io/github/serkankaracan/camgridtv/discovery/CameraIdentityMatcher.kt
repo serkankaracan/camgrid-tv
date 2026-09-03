@@ -6,8 +6,12 @@ class CameraIdentityMatcher {
     fun match(camera: CameraDevice, discovered: DiscoveredOnvifDevice): CameraIdentityMatch {
         val storedEndpoint = DiscoveryAddressNormalizer.endpoint(camera.endpointUuid)
         val foundEndpoint = DiscoveryAddressNormalizer.endpoint(discovered.endpointUuid)
-        if (storedEndpoint != null && storedEndpoint == foundEndpoint) {
-            return CameraIdentityMatch(CameraIdentityMatchStrength.ENDPOINT_UUID)
+        if (storedEndpoint != null && foundEndpoint != null) {
+            return if (storedEndpoint == foundEndpoint) {
+                CameraIdentityMatch(CameraIdentityMatchStrength.ENDPOINT_UUID)
+            } else {
+                CameraIdentityMatch(CameraIdentityMatchStrength.NONE)
+            }
         }
 
         val storedXAddr = DiscoveryAddressNormalizer.xAddr(camera.onvifXAddr)?.value

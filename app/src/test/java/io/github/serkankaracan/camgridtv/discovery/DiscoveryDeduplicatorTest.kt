@@ -48,6 +48,73 @@ class DiscoveryDeduplicatorTest {
     }
 
     @Test
+    fun `distinct endpoint uuids remain separate when address matches`() {
+        val first =
+            device(
+                id = "one",
+                uuid = UUID,
+                host = "192.168.50.100",
+                xAddr = "http://192.168.50.100:2020/onvif/device_service",
+                seen = 1L,
+            )
+        val second =
+            device(
+                id = "two",
+                uuid = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+                host = first.host,
+                xAddr = first.xAddrs.single(),
+                seen = 2L,
+            )
+
+        val result = deduplicator.deduplicate(listOf(first, second))
+
+        assertEquals(listOf("one", "two"), result.map(DiscoveredOnvifDevice::id))
+    }
+
+    @Test
+    fun `uuid-less observation cannot bridge distinct endpoint uuids`() {
+        val first =
+            device(
+                id = "one",
+                uuid = UUID,
+                host = "192.168.50.100",
+                xAddr = "http://192.168.50.100:2020/onvif/device_service",
+                seen = 1L,
+            )
+        val second =
+            device(
+                id = "two",
+                uuid = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+                host = first.host,
+                xAddr = first.xAddrs.single(),
+                seen = 2L,
+            )
+        val addressOnly =
+            device(
+                id = "address-only",
+                uuid = null,
+                host = first.host,
+                xAddr = first.xAddrs.single(),
+                seen = 3L,
+            )
+
+        listOf(
+                listOf(first, second, addressOnly),
+                listOf(addressOnly, first, second),
+                listOf(first, addressOnly, second),
+            )
+            .forEach { observations ->
+                val result = deduplicator.deduplicate(observations)
+
+                assertEquals(2, result.size)
+                assertEquals(
+                    setOf(UUID, second.endpointUuid),
+                    result.mapTo(mutableSetOf(), DiscoveredOnvifDevice::endpointUuid),
+                )
+            }
+    }
+
+    @Test
     fun `host and ONVIF port are the final fallback identity`() {
         val first = device("one", null, "192.168.50.100", "http://192.168.50.100:2020/a", 1L)
         val second = device("two", null, "192.168.50.100", "http://192.168.50.100:2020/b", 2L)

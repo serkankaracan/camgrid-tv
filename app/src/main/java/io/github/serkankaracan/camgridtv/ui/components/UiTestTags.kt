@@ -1,6 +1,7 @@
 package io.github.serkankaracan.camgridtv.ui.components
 
 object UiTestTags {
+    const val AppRoot = "app_root"
     const val PermissionScreen = "permission_screen"
     const val PermissionPrimaryAction = "permission_primary_action"
     const val DiscoveryScreen = "discovery_screen"
@@ -15,6 +16,7 @@ object UiTestTags {
     const val SharedProfileToggle = "shared_profile_toggle"
     const val StartWatchingAction = "start_watching_action"
     const val WallScreen = "wall_screen"
+    const val WallRescanAction = "wall_rescan_action"
     const val FullscreenScreen = "fullscreen_screen"
 
     fun discoveryCamera(cameraId: String): String = "discovery_camera_${safeId(cameraId)}"

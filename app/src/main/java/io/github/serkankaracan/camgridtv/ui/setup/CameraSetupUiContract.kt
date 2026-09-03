@@ -2,6 +2,7 @@ package io.github.serkankaracan.camgridtv.ui.setup
 
 enum class ConnectionTestUiState {
     NotTested,
+    CredentialsRequired,
     Testing,
     Connected,
     AuthenticationFailed,
@@ -35,6 +36,9 @@ class CameraSetupUiState(
     val canStartWatching: Boolean = false,
     val submitting: Boolean = false,
 ) {
+    val connectionTestInProgress: Boolean
+        get() = cameras.any { it.connectionState == ConnectionTestUiState.Testing }
+
     override fun toString(): String =
         "CameraSetupUiState(cameras=$cameras, username=***, password=***, " +
             "useSharedProfile=$useSharedProfile, editingCameraId=$editingCameraId, " +
@@ -52,7 +56,9 @@ sealed interface CameraSetupUiAction {
 
     data object SaveCameraName : CameraSetupUiAction
 
-    data class UsernameChanged(val value: String) : CameraSetupUiAction
+    data class UsernameChanged(val value: String) : CameraSetupUiAction {
+        override fun toString(): String = "UsernameChanged(value=***)"
+    }
 
     class PasswordChanged(val value: String) : CameraSetupUiAction {
         override fun toString(): String = "PasswordChanged(value=***)"
@@ -65,4 +71,29 @@ sealed interface CameraSetupUiAction {
     data object StartWatching : CameraSetupUiAction
 
     data object ClearStoredCredentials : CameraSetupUiAction
+}
+
+internal data class ConnectionTestOperation(val cameraId: String, val token: Long)
+
+/** Prevents overlapping tests and rejects completions from cancelled operations. */
+internal class ConnectionTestOperationGate {
+    private var nextToken = 0L
+
+    var active: ConnectionTestOperation? = null
+        private set
+
+    fun tryStart(cameraId: String): ConnectionTestOperation? {
+        if (active != null) return null
+        return ConnectionTestOperation(cameraId, ++nextToken).also { active = it }
+    }
+
+    fun isCurrent(operation: ConnectionTestOperation): Boolean = active == operation
+
+    fun finish(operation: ConnectionTestOperation): Boolean {
+        if (!isCurrent(operation)) return false
+        active = null
+        return true
+    }
+
+    fun cancelActive(): ConnectionTestOperation? = active.also { active = null }
 }

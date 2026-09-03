@@ -1,8 +1,10 @@
 package io.github.serkankaracan.camgridtv.security
 
 import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyPermanentlyInvalidatedException
 import android.security.keystore.KeyProperties
 import java.security.KeyStore
+import java.security.UnrecoverableKeyException
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -15,7 +17,7 @@ import kotlinx.coroutines.withContext
 class AndroidKeystoreCredentialCipher(
     private val keyAlias: String = DEFAULT_KEY_ALIAS,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
-) : CredentialCipher {
+) : CredentialCipher, CredentialKeyInvalidator {
     override suspend fun encrypt(secret: CredentialSecret): EncryptedCredential =
         withContext(ioDispatcher) {
             val payload = CredentialPayloadCodec.encode(secret)
@@ -29,6 +31,10 @@ class AndroidKeystoreCredentialCipher(
                 )
             } catch (cancelled: CancellationException) {
                 throw cancelled
+            } catch (_: KeyPermanentlyInvalidatedException) {
+                throw SecretRecoveryRequiredException("Stored camera credentials require recovery")
+            } catch (_: UnrecoverableKeyException) {
+                throw SecretRecoveryRequiredException("Stored camera credentials require recovery")
             } catch (_: Exception) {
                 throw CredentialEncryptionException("Camera credentials could not be encrypted")
             } finally {
@@ -67,6 +73,23 @@ class AndroidKeystoreCredentialCipher(
                 ciphertext.fill(0)
             }
         }
+
+    override suspend fun deleteCredentialKey() {
+        withContext(ioDispatcher) {
+            try {
+                synchronized(KEY_LOCK) {
+                    val keyStore = KeyStore.getInstance(ANDROID_KEY_STORE).apply { load(null) }
+                    if (keyStore.containsAlias(keyAlias)) keyStore.deleteEntry(keyAlias)
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                throw CredentialKeyDeletionException(
+                    "Camera credential encryption key could not be deleted"
+                )
+            }
+        }
+    }
 
     private fun getExistingKey(): SecretKey =
         synchronized(KEY_LOCK) {

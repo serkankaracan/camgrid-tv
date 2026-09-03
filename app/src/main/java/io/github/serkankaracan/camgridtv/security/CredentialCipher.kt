@@ -7,6 +7,13 @@ interface CredentialCipher {
     suspend fun decrypt(encryptedCredential: EncryptedCredential): CredentialSecret
 }
 
+interface CredentialKeyInvalidator {
+    /** Permanently removes the key used for camera credential encryption. */
+    suspend fun deleteCredentialKey()
+}
+
 class CredentialEncryptionException(message: String) : IllegalStateException(message)
 
 class SecretRecoveryRequiredException(message: String) : IllegalStateException(message)
+
+class CredentialKeyDeletionException(message: String) : IllegalStateException(message)

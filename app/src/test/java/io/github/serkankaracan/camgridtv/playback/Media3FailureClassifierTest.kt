@@ -26,6 +26,19 @@ class Media3FailureClassifierTest {
     }
 
     @Test
+    fun `classifies Media3 RTSP method and status messages as authentication failures`() {
+        listOf("DESCRIBE 401", "SETUP 403").forEach { message ->
+            assertEquals(
+                PlaybackFailureReason.AUTHENTICATION,
+                Media3FailureClassifier.classify(
+                    PlaybackException.ERROR_CODE_IO_UNSPECIFIED,
+                    IllegalStateException(message),
+                ),
+            )
+        }
+    }
+
+    @Test
     fun `classifies nested authentication text independently of default locale`() {
         val originalLocale = Locale.getDefault()
         try {
@@ -59,5 +72,22 @@ class Media3FailureClassifierTest {
                 error,
             ),
         )
+    }
+
+    @Test
+    fun `does not mistake a port or delay for an authentication status`() {
+        listOf(
+                "Connection to camera port 401 failed",
+                "Retry scheduled after 403 ms",
+            )
+            .forEach { message ->
+                assertEquals(
+                    PlaybackFailureReason.TRANSIENT,
+                    Media3FailureClassifier.classify(
+                        PlaybackException.ERROR_CODE_IO_UNSPECIFIED,
+                        IllegalStateException(message),
+                    ),
+                )
+            }
     }
 }

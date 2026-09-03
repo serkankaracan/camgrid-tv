@@ -98,4 +98,16 @@ interface CameraSelectionRepository {
             )
         }
     }
+
+    suspend fun clearCredentialProfiles() {
+        update { current ->
+            current.copy(
+                cameras =
+                    current.cameras.map { camera ->
+                        camera.copy(credentialProfileId = null)
+                    },
+                credentialProfiles = emptyList(),
+            )
+        }
+    }
 }

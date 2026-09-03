@@ -192,7 +192,8 @@ internal object Media3FailureClassifier {
             val normalizedMessage = current?.message?.lowercase(Locale.ROOT).orEmpty()
             if (
                 AUTHENTICATION_TERMS.any(normalizedMessage::contains) ||
-                    AUTHENTICATION_STATUS.matches(normalizedMessage)
+                    AUTHENTICATION_STATUS.containsMatchIn(normalizedMessage) ||
+                    RTSP_METHOD_AUTHENTICATION_STATUS.containsMatchIn(normalizedMessage)
             ) {
                 return true
             }
@@ -203,5 +204,12 @@ internal object Media3FailureClassifier {
 
     private const val MAX_CAUSE_DEPTH = 8
     private val AUTHENTICATION_TERMS = listOf("unauthorized", "authentication failed")
-    private val AUTHENTICATION_STATUS = Regex(".*(?:^|\\D)(?:401|403)(?:\\D|$).*")
+    private val AUTHENTICATION_STATUS =
+        Regex(
+            "\\b(?:status(?:\\s+code)?|response\\s+code|error\\s+code)\\s*[:=]?\\s*(?:401|403)\\b"
+        )
+    private val RTSP_METHOD_AUTHENTICATION_STATUS =
+        Regex(
+            "\\b(?:options|describe|setup|play|pause|teardown|get_parameter|set_parameter)\\s+(?:401|403)\\b"
+        )
 }

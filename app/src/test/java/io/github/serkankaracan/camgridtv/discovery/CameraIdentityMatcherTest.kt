@@ -37,6 +37,19 @@ class CameraIdentityMatcherTest {
         )
     }
 
+    @Test
+    fun `different known endpoint identities never fall back to a reused address`() {
+        val stored = camera(host = "192.168.50.100")
+        val differentCamera =
+            discovered(host = "192.168.50.100")
+                .copy(endpointUuid = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee")
+
+        assertEquals(
+            CameraIdentityMatchStrength.NONE,
+            matcher.match(stored, differentCamera).strength,
+        )
+    }
+
     private fun camera(host: String) =
         CameraDevice(
             id = "stored-camera",

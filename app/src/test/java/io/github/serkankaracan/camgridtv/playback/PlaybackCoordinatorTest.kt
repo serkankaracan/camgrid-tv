@@ -51,6 +51,23 @@ class PlaybackCoordinatorTest {
     }
 
     @Test
+    fun `an initially stopped lifecycle does not create players before foreground`() = runTest {
+        val factory = FakePlaybackEngineFactory()
+        val coordinator = coordinator(factory, initiallyForeground = false)
+
+        coordinator.showGrid(listOf(gridRequest("one", 11)))
+
+        assertEquals(0, coordinator.activeEngineCount())
+        assertTrue(factory.created.isEmpty())
+
+        coordinator.onForeground()
+
+        assertEquals(1, coordinator.activeEngineCount())
+        assertEquals(1, factory.created.size)
+        coordinator.leaveScreen()
+    }
+
+    @Test
     fun `fullscreen transition releases grid and owns only primary player`() = runTest {
         val factory = FakePlaybackEngineFactory()
         val coordinator = coordinator(factory)
@@ -216,12 +233,14 @@ class PlaybackCoordinatorTest {
     }
 
     private fun kotlinx.coroutines.test.TestScope.coordinator(
-        factory: PlaybackEngineFactory
+        factory: PlaybackEngineFactory,
+        initiallyForeground: Boolean = true,
     ): PlaybackCoordinator =
         PlaybackCoordinator(
             engineFactory = factory,
             scope = this,
             retryPolicy = RetryPolicy(jitter = RetryJitter { 0L }),
+            initiallyForeground = initiallyForeground,
         )
 
     private fun gridRequest(slotId: String, finalOctet: Int): PlaybackRequest =

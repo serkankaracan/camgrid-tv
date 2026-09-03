@@ -11,6 +11,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
 import androidx.test.espresso.Espresso
@@ -24,6 +25,7 @@ import io.github.serkankaracan.camgridtv.ui.wall.CameraWallScreen
 import io.github.serkankaracan.camgridtv.ui.wall.CameraWallUiAction
 import io.github.serkankaracan.camgridtv.ui.wall.CameraWallUiState
 import io.github.serkankaracan.camgridtv.ui.wall.WallCameraUiModel
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
@@ -120,6 +122,34 @@ class CameraWallScreenTest {
         }
 
         composeRule.onNodeWithTag(UiTestTags.wallCamera("camera-1")).assertIsFocused()
+    }
+
+    @Test
+    fun retryingCameraOffersAnExplicitRescanAction() {
+        var receivedAction: CameraWallUiAction? = null
+        composeRule.setContent {
+            CamGridTheme {
+                CameraWallScreen(
+                    state =
+                        CameraWallUiState(
+                            cameras =
+                                listOf(
+                                    WallCameraUiModel(
+                                        id = "camera-1",
+                                        displayName = "Camera 1",
+                                        playbackState = PlaybackState.Retrying(2, 4_000),
+                                    )
+                                )
+                        ),
+                    onAction = { receivedAction = it },
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag(UiTestTags.WallRescanAction).performClick()
+        composeRule.runOnIdle {
+            assertEquals(CameraWallUiAction.RescanCameras, receivedAction)
+        }
     }
 
     @Test

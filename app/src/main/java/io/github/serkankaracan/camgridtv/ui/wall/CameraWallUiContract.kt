@@ -16,5 +16,7 @@ data class CameraWallUiState(
 sealed interface CameraWallUiAction {
     data class OpenFullscreen(val cameraId: String) : CameraWallUiAction
 
+    data object RescanCameras : CameraWallUiAction
+
     data object BackToCameraSetup : CameraWallUiAction
 }

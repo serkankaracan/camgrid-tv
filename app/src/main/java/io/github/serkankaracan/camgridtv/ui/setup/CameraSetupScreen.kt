@@ -49,7 +49,9 @@ fun CameraSetupScreen(
 ) {
     val selectedCount = state.cameras.count(SetupCameraUiModel::selected)
     val credentialControlsEnabled =
-        !state.submitting && state.credentialRecovery == CredentialRecoveryUiState.NotRequired
+        !state.submitting &&
+            !state.connectionTestInProgress &&
+            state.credentialRecovery == CredentialRecoveryUiState.NotRequired
     val initialFocusRequester = remember { FocusRequester() }
     val recoveryFocusRequester = remember { FocusRequester() }
     LaunchedEffect(state.credentialRecovery) {
@@ -232,6 +234,7 @@ private fun SetupCameraCard(
                             enabled =
                                 camera.selected &&
                                     !state.submitting &&
+                                    !state.connectionTestInProgress &&
                                     state.credentialRecovery ==
                                         CredentialRecoveryUiState.NotRequired,
                             modifier = Modifier.testTag(UiTestTags.testConnection(camera.id)),
@@ -251,6 +254,7 @@ private fun ConnectionStatus(camera: SetupCameraUiModel) {
     val status =
         when (camera.connectionState) {
             ConnectionTestUiState.NotTested -> null
+            ConnectionTestUiState.CredentialsRequired -> R.string.camera_account_required to true
             ConnectionTestUiState.Testing -> R.string.connecting to false
             ConnectionTestUiState.Connected -> R.string.live to false
             ConnectionTestUiState.AuthenticationFailed -> R.string.auth_failed to true

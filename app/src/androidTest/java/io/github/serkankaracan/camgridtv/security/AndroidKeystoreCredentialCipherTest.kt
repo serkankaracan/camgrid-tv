@@ -7,6 +7,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AndroidKeystoreCredentialCipherTest {
@@ -44,6 +45,31 @@ class AndroidKeystoreCredentialCipherTest {
             restored?.close()
             secret.close()
             password.fill('\u0000')
+            KeyStore.getInstance("AndroidKeyStore").apply { load(null) }.deleteEntry(keyAlias)
+        }
+    }
+
+    @Test
+    fun deletingKeyIsIdempotentAndMakesStoredCiphertextUnrecoverable() = runBlocking {
+        val keyAlias = "camgrid_tv_recovery_${UUID.randomUUID()}"
+        val cipher = AndroidKeystoreCredentialCipher(keyAlias = keyAlias)
+        val secret = CredentialSecret("fixture-user", "fixture-password".toCharArray())
+        try {
+            val encrypted = cipher.encrypt(secret)
+
+            cipher.deleteCredentialKey()
+            cipher.deleteCredentialKey()
+
+            val failure =
+                try {
+                    cipher.decrypt(encrypted)
+                    null
+                } catch (caught: Exception) {
+                    caught
+                }
+            assertTrue(failure is SecretRecoveryRequiredException)
+        } finally {
+            secret.close()
             KeyStore.getInstance("AndroidKeyStore").apply { load(null) }.deleteEntry(keyAlias)
         }
     }

@@ -8,6 +8,19 @@ class DiscoveryDeduplicator {
         val matches = current.withIndex().filter { (_, device) -> sameDevice(device, incoming) }
         if (matches.isEmpty()) return (current + incoming).sortedBy(DiscoveredOnvifDevice::id)
 
+        val incomingEndpoint = DiscoveryAddressNormalizer.endpoint(incoming.endpointUuid)
+        val matchedEndpoints =
+            matches
+                .mapNotNull { (_, device) ->
+                    DiscoveryAddressNormalizer.endpoint(device.endpointUuid)
+                }
+                .distinct()
+        if (incomingEndpoint == null && matchedEndpoints.size > 1) {
+            // An address-only packet cannot identify which authoritative UUID it belongs to.
+            // Ignoring the ambiguous observation preserves both devices instead of bridging them.
+            return current.sortedBy(DiscoveredOnvifDevice::id)
+        }
+
         val primaryIndex = matches.first().index
         var merged = incoming
         matches.forEach { (_, existing) -> merged = merge(existing, merged) }
@@ -29,7 +42,9 @@ class DiscoveryDeduplicator {
     fun sameDevice(first: DiscoveredOnvifDevice, second: DiscoveredOnvifDevice): Boolean {
         val firstEndpoint = DiscoveryAddressNormalizer.endpoint(first.endpointUuid)
         val secondEndpoint = DiscoveryAddressNormalizer.endpoint(second.endpointUuid)
-        if (firstEndpoint != null && firstEndpoint == secondEndpoint) return true
+        if (firstEndpoint != null && secondEndpoint != null) {
+            return firstEndpoint == secondEndpoint
+        }
 
         val firstAddresses =
             first.xAddrs.mapNotNull(DiscoveryAddressNormalizer::xAddr).mapTo(mutableSetOf()) {
