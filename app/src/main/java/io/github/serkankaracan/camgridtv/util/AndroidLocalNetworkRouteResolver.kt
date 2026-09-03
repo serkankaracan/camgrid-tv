@@ -80,7 +80,7 @@ class AndroidLocalNetworkRouteResolver(context: Context) : LocalNetworkRouteReso
                 canonicalHost = canonicalHost,
                 destinationAddress = destinationAddress,
                 prefixLength = destination.prefixLength,
-                hasGateway = route.hasGateway(),
+                hasGateway = route.hasGatewayCompat(),
                 isUnicast =
                     Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
                         route.type == RouteInfo.RTN_UNICAST,
@@ -88,4 +88,11 @@ class AndroidLocalNetworkRouteResolver(context: Context) : LocalNetworkRouteReso
             )
         }
     }
+
+    private fun RouteInfo.hasGatewayCompat(): Boolean =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            hasGateway()
+        } else {
+            gateway?.isAnyLocalAddress == false
+        }
 }
