@@ -7,7 +7,7 @@ Before a change, read `AGENTS.md` and `docs/IMPLEMENTATION_STATUS.md`. Keep comm
 small and use Conventional Commits. Run:
 
 ```powershell
-.\gradlew.bat --no-daemon spotlessCheck lintDebug testDebugUnitTest assembleDebug
+.\gradlew.bat --no-daemon spotlessCheck lintDebug lintRelease testDebugUnitTest assembleDebug assembleDebugAndroidTest assembleRelease
 .\scripts\check-no-secrets.ps1
 git diff --check
 ```

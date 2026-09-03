@@ -9,7 +9,7 @@ interface DiscoveryRepository {
 
 class DefaultDiscoveryRepository(
     private val client: WsDiscoveryClient,
-    private val deviceFactory: DiscoveredOnvifDeviceFactory = DiscoveredOnvifDeviceFactory(),
+    private val deviceFactory: DiscoveredOnvifDeviceFactory,
     private val deduplicator: DiscoveryDeduplicator = DiscoveryDeduplicator(),
     private val wallClockMillis: () -> Long = System::currentTimeMillis,
 ) : DiscoveryRepository {

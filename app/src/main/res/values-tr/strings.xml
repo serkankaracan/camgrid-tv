@@ -15,6 +15,7 @@
     <string name="discovery_no_local_network">Bu TV’yi kameralarla aynı Wi-Fi veya Ethernet ağına bağlayıp yeniden tarayın.</string>
     <string name="discovery_network_lost">Tarama sırasında yerel ağ değişti. Bağlantıyı kontrol edip yeniden tarayın.</string>
     <string name="discovery_transport_unavailable">Yerel keşif bağlantısı başlatılamadı. Yerel ağ iznini kontrol edip yeniden deneyin.</string>
+    <string name="generic_onvif_camera">ONVIF kamera</string>
     <string name="camera_account_required">Kamera hesabı bilgileri gerekli</string>
     <string name="camera_account_explanation">Bulut, Wi-Fi veya modem parolası yerine kamera uygulamasında ayrıca oluşturulan Kamera Hesabı’nı kullanın.</string>
     <string name="credential_recovery_required">Kayıtlı kamera kimlik bilgilerinin kilidi artık açılamıyor. Bilgileri temizleyip kamera hesabını yeniden girin. Hiçbir parola kurtarılmadı veya açığa çıkarılmadı.</string>

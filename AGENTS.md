@@ -25,7 +25,7 @@ Read `docs/IMPLEMENTATION_STATUS.md` before making changes.
 Run from PowerShell:
 
 ```powershell
-.\gradlew.bat --no-daemon spotlessCheck lintDebug testDebugUnitTest assembleDebug
+.\gradlew.bat --no-daemon spotlessCheck lintDebug lintRelease testDebugUnitTest assembleDebug assembleDebugAndroidTest assembleRelease
 .\scripts\check-no-secrets.ps1
 git diff --check
 git status --short

@@ -23,17 +23,49 @@ class CameraIdentityMatcherTest {
     }
 
     @Test
+    fun `automatic display name follows rediscovered name`() {
+        val stored =
+            camera(host = "192.168.50.100")
+                .copy(
+                    displayName = "Old name",
+                    discoveredName = "Old name",
+                )
+
+        val updated = matcher.applyDiscovery(stored, discovered())
+
+        assertEquals("Fresh name", updated.displayName)
+        assertEquals("Fresh name", updated.discoveredName)
+    }
+
+    @Test
     fun `xaddr precedes host and port fallback`() {
+        val stored =
+            camera(host = "192.168.50.100")
+                .copy(
+                    endpointUuid = null,
+                    onvifPort = 2021,
+                )
+        val found = discovered().copy(endpointUuid = null)
+
+        assertEquals(
+            CameraIdentityMatchStrength.ONVIF_XADDR,
+            matcher.match(stored, found).strength,
+        )
+    }
+
+    @Test
+    fun `stored xaddr for a different source host cannot bind camera identity`() {
         val stored =
             camera(host = "192.168.50.99")
                 .copy(
                     endpointUuid = null,
                     onvifXAddr = "HTTP://192.168.50.100:2020/onvif/device_service",
                 )
+        val found = discovered().copy(endpointUuid = null)
 
         assertEquals(
-            CameraIdentityMatchStrength.ONVIF_XADDR,
-            matcher.match(stored, discovered()).strength,
+            CameraIdentityMatchStrength.NONE,
+            matcher.match(stored, found).strength,
         )
     }
 

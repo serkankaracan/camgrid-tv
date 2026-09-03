@@ -170,11 +170,13 @@ internal object Media3FailureClassifier {
             PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED,
             PlaybackException.ERROR_CODE_PARSING_MANIFEST_MALFORMED,
             PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED,
+            PlaybackException.ERROR_CODE_DECODING_FORMAT_EXCEEDS_CAPABILITIES,
             PlaybackException.ERROR_CODE_DECODING_FORMAT_UNSUPPORTED ->
                 PlaybackFailureReason.UNSUPPORTED_STREAM
 
             PlaybackException.ERROR_CODE_DECODER_INIT_FAILED,
-            PlaybackException.ERROR_CODE_DECODER_QUERY_FAILED ->
+            PlaybackException.ERROR_CODE_DECODER_QUERY_FAILED,
+            PlaybackException.ERROR_CODE_DECODING_RESOURCES_RECLAIMED ->
                 PlaybackFailureReason.DECODER_RESOURCE_EXHAUSTED
 
             PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,

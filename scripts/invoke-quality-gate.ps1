@@ -22,8 +22,11 @@ try {
         --no-daemon `
         spotlessCheck `
         lintDebug `
+        lintRelease `
         testDebugUnitTest `
-        assembleDebug
+        assembleDebug `
+        assembleDebugAndroidTest `
+        assembleRelease
     if ($LASTEXITCODE -ne 0) {
         throw "Gradle quality gate failed with exit code $LASTEXITCODE."
     }

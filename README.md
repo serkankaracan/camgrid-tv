@@ -96,7 +96,8 @@ sonra API 37 SDK'sını proje-yerel, Git tarafından yok sayılan alana kurun:
     -AcceptLicenses
 ```
 
-Kalite kapısı ve debug APK:
+Kalite kapısı; debug/release lint'i, JVM testlerini, debug APK'yı, debug
+instrumented-test APK'sını ve küçültülmüş release APK'yı derler:
 
 ```powershell
 .\scripts\invoke-quality-gate.ps1 `
@@ -107,13 +108,14 @@ Kalite kapısı ve debug APK:
 Doğrudan eşdeğer Gradle komutu:
 
 ```powershell
-.\gradlew.bat --no-daemon spotlessCheck lintDebug testDebugUnitTest assembleDebug
-```
-
-Instrumented test APK'sını cihazda çalıştırmadan derlemek için:
-
-```powershell
-.\gradlew.bat --no-daemon assembleDebugAndroidTest
+.\gradlew.bat --no-daemon `
+    spotlessCheck `
+    lintDebug `
+    lintRelease `
+    testDebugUnitTest `
+    assembleDebug `
+    assembleDebugAndroidTest `
+    assembleRelease
 ```
 
 APK konumu:
@@ -125,30 +127,58 @@ app\build\outputs\apk\debug\app-debug.apk
 ## Android TV / Mi Stick kurulumu
 
 TV'de geliştirici seçeneklerini ve desteklenen USB/ağ hata ayıklama yöntemini
-etkinleştirin. Proje-yerel platform-tools yolunu kullanın. Kablosuz eşleme
-destekleniyorsa gerçek adresleri yalnız PowerShell isteminde girin:
+etkinleştirin. Proje-yerel platform-tools yolunu kullanın:
 
 ```powershell
 $adb = (Resolve-Path -LiteralPath '.\.android-sdk\platform-tools\adb.exe').Path
-$pairTarget = Read-Host 'Mi Stick eşleme adresi ve portu'
-& $adb pair $pairTarget
-$connectTarget = Read-Host 'Mi Stick bağlantı adresi ve portu'
-& $adb connect $connectTarget
+& $adb start-server
 & $adb devices -l
-& $adb install -r '.\app\build\outputs\apk\debug\app-debug.apk'
 ```
 
-Eşleme kodunu komut argümanına yazmayın; adb isteminde girin. Cihaz kablosuz
-eşlemeyi desteklemiyorsa üreticinin desteklediği USB hata ayıklama bağlantısını
-kullanın, `pair`/`connect` satırlarını atlayıp `devices -l` ile doğrulayın.
-
-Uygulama yalnız `LEANBACK_LAUNCHER` içerir, landscape'dir ve dokunmatik ekran
-gerektirmez. Android Studio kurulumu zorunlu değildir. CLI emülatörü varsa bağlı
-testler ayrıca çalıştırılabilir:
+API 33+ Mi Stick **Kablosuz hata ayıklama > Eşleme koduyla cihaz eşleştir**
+menüsünü sunuyorsa eşleme ve bağlantı adreslerini ayrı ayrı, yalnız istemde
+girin:
 
 ```powershell
-.\gradlew.bat connectedDebugAndroidTest
+$pairTarget = Read-Host 'Mi Stick eşleme IP:port değeri'
+& $adb pair $pairTarget
+$connectTarget = Read-Host 'Mi Stick kablosuz hata ayıklama IP:port değeri'
+& $adb connect $connectTarget
+& $adb devices -l
+Remove-Variable -Name pairTarget, connectTarget
 ```
+
+Eşleme kodunu komut argümanına yazmayın; adb istediğinde girin. `adb tcpip 5555`
+cihazda bir ağ dinleyicisi açar ve yarım kalan bir komut dizisi bu portu açık
+bırakabilir. Kablosuz eşleme menüsü olmayan eski TV/Mi Stick için tek satırlık
+komut kullanmayın; USB/OTG doğrulamasını, RFC1918 adres kontrolünü ve hata halinde
+otomatik kapatmayı içeren
+[kanonik TCP 5555 akışını](docs/MANUAL_TEST_PLAN_TR.md#eski-tvmi-stick-için-usbotgden-tcp-5555e-geçiş)
+aynen izleyin.
+
+Boş liste, `unauthorized` veya `offline` durumunda ilerlemeyin. Birden çok cihaz
+varsa diğerlerini ayırın; `connectedDebugAndroidTest` hedefleyebileceği tüm bağlı
+cihazlarda çalışır. Yalnız Mi Stick'e ait tek bir `device` satırı kaldığında
+güncel APK'yı kurup, **Kamera Hesabı girmeden önce** cihaz testlerini çalıştırın:
+
+```powershell
+$deviceSerial = Read-Host 'Tek yetkili Mi Stick adb seri/adres değeri'
+& $adb -s $deviceSerial install -r '.\app\build\outputs\apk\debug\app-debug.apk'
+.\gradlew.bat --no-daemon connectedDebugAndroidTest
+```
+
+`INSTALL_FAILED_UPDATE_INCOMPATIBLE` imza uyuşmazlığıdır. Aynı imza anahtarını
+kullanmak tercih edilir; uygulamayı kaldırmak veya `pm clear` çalıştırmak kamera
+seçimlerini, ayarları ve Keystore ile korunan Kamera Hesabı verilerini geri
+alınamaz biçimde siler. Veri kaybını açıkça kabul etmeden bu komutları
+çalıştırmayın. `unauthorized`, `offline`, çoklu cihaz, imza uyuşmazlığı, ölçümlü
+temiz başlangıç ve test sonu TCP 5555 kapatma adımları
+[manuel test planında](docs/MANUAL_TEST_PLAN_TR.md) bulunur.
+
+Uygulama yalnız `LEANBACK_LAUNCHER` içerir, landscape'dir ve dokunmatik ekran
+gerektirmez. Android Studio kurulumu zorunlu değildir. Kamera bağlantı testinden
+önce VLC, ffplay, NVR önizlemesi ve diğer RTSP istemcilerini kapatın; kameranın
+eşzamanlı oturum sınırı aksi halde yanıltıcı bağlantı/decoder hatası doğurabilir.
 
 ## Kumanda kullanımı
 
@@ -187,12 +217,13 @@ cihaz adımları için [manuel test planı](docs/MANUAL_TEST_PLAN_TR.md) dosyas�
 
 ## Test durumu
 
-Windows kalite kapısı ve 116 JVM testi başarılıdır; debug APK ile instrumented
-test APK'sı derlenmiştir. Instrumented testler bağlı cihazda çalıştırılmamıştır.
-Fiziksel C500/C510W yayınları ve Mi Stick kabul senaryoları donanım erişimi
-olmadığı için **BLOCKED** durumundadır. Güncel kanıtlar
-[docs/TEST_REPORT.md](docs/TEST_REPORT.md) içinde tutulur; fake/emülatör testleri
-fiziksel kabul testi sayılmaz.
+Güncel kalite kapısı debug/release lint'i, JVM testlerini, debug ve küçültülmüş
+release APK'larını, ayrıca debug instrumented-test APK'sını kapsar. Son entegre
+koşunun sayıları, APK özeti ve CI sonucu ancak gerçekten çalıştırıldıktan sonra
+[docs/TEST_REPORT.md](docs/TEST_REPORT.md) içine yazılır; eski değerler yalnız
+tarihsel kanıt olarak etiketlenir. Fiziksel C500/C510W yayınları, Mi Stick
+instrumented testleri ve kabul senaryoları donanım erişimi olmadığı için
+**BLOCKED** durumundadır. Fake/emülatör testleri fiziksel kabul testi sayılmaz.
 
 ## Katkı ve lisans
 

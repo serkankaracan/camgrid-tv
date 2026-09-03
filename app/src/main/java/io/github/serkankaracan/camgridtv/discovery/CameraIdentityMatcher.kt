@@ -14,12 +14,17 @@ class CameraIdentityMatcher {
             }
         }
 
-        val storedXAddr = DiscoveryAddressNormalizer.xAddr(camera.onvifXAddr)?.value
+        val storedXAddr =
+            DiscoveryAddressNormalizer.xAddrForHost(camera.onvifXAddr, camera.host)?.value
         if (
             storedXAddr != null &&
-                discovered.xAddrs.mapNotNull(DiscoveryAddressNormalizer::xAddr).any {
-                    it.value == storedXAddr
-                }
+                DiscoveryAddressNormalizer.xAddrsForHost(
+                        discovered.xAddrs,
+                        discovered.host,
+                    )
+                    .any {
+                        it.value == storedXAddr
+                    }
         ) {
             return CameraIdentityMatch(CameraIdentityMatchStrength.ONVIF_XADDR)
         }
@@ -39,7 +44,19 @@ class CameraIdentityMatcher {
         }
         return camera.copy(
             endpointUuid = discovered.endpointUuid ?: camera.endpointUuid,
-            onvifXAddr = discovered.xAddrs.firstOrNull() ?: camera.onvifXAddr,
+            onvifXAddr =
+                DiscoveryAddressNormalizer.xAddrsForHost(
+                        discovered.xAddrs,
+                        discovered.host,
+                    )
+                    .firstOrNull()
+                    ?.value
+                    ?: DiscoveryAddressNormalizer.xAddrForHost(
+                            camera.onvifXAddr,
+                            discovered.host,
+                        )
+                        ?.value,
+            displayName = camera.displayNameAfterDiscovery(discovered.discoveredName),
             discoveredName = discovered.discoveredName,
             manufacturer = discovered.manufacturer,
             model = discovered.model,

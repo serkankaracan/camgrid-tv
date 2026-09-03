@@ -42,6 +42,8 @@ fun Media3PlayerViewHost(
             PlayerView(context).also { view ->
                 view.useController = false
                 view.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+                view.isFocusable = false
+                view.isFocusableInTouchMode = false
                 view.keepScreenOn = keepScreenOn
                 view.player = player
                 playerView = view

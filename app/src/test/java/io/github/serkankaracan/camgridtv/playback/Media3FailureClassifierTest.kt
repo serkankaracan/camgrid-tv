@@ -7,6 +7,46 @@ import org.junit.Test
 
 class Media3FailureClassifierTest {
     @Test
+    fun `classifies decoder initialization query and reclaimed resource failures as exhausted`() {
+        listOf(
+                PlaybackException.ERROR_CODE_DECODER_INIT_FAILED,
+                PlaybackException.ERROR_CODE_DECODER_QUERY_FAILED,
+                PlaybackException.ERROR_CODE_DECODING_RESOURCES_RECLAIMED,
+            )
+            .forEach { errorCode ->
+                assertEquals(
+                    PlaybackFailureReason.DECODER_RESOURCE_EXHAUSTED,
+                    Media3FailureClassifier.classify(errorCode, decoderError()),
+                )
+            }
+    }
+
+    @Test
+    fun `classifies decoder capability failures as unsupported streams`() {
+        listOf(
+                PlaybackException.ERROR_CODE_DECODING_FORMAT_EXCEEDS_CAPABILITIES,
+                PlaybackException.ERROR_CODE_DECODING_FORMAT_UNSUPPORTED,
+            )
+            .forEach { errorCode ->
+                assertEquals(
+                    PlaybackFailureReason.UNSUPPORTED_STREAM,
+                    Media3FailureClassifier.classify(errorCode, decoderError()),
+                )
+            }
+    }
+
+    @Test
+    fun `classifies generic decoding failure as transient`() {
+        assertEquals(
+            PlaybackFailureReason.TRANSIENT,
+            Media3FailureClassifier.classify(
+                PlaybackException.ERROR_CODE_DECODING_FAILED,
+                decoderError(),
+            ),
+        )
+    }
+
+    @Test
     fun `classifies 401 and 403 status in the cause chain as authentication failures`() {
         listOf(401, 403).forEach { status ->
             val error =
@@ -90,4 +130,6 @@ class Media3FailureClassifierTest {
                 )
             }
     }
+
+    private fun decoderError(): Throwable = IllegalStateException("Decoder failure")
 }

@@ -2,29 +2,28 @@
 
 Last updated: 2026-09-03
 
-## Current phase
+## Current candidate status
 
-Phase 9 documentation and the alpha handoff package are prepared. Phases 0–7 are
-implemented, locally verified and pushed. Phase 8 was completed to the extent
-possible: device availability was checked and the detailed manual plan was
-prepared, but physical validation remains BLOCKED because no C500, C510W, Mi
-Stick, emulator or connected adb device was available.
+The `0.1.0-alpha.1` implementation and handoff documentation are present. The
+final integrated source tree passed the Windows command-line quality gate on
+2026-09-03: 145 JVM tests passed, both lint variants completed without errors,
+and debug, instrumented-test and minified unsigned release APKs were assembled.
+The exact local evidence is recorded in `docs/TEST_REPORT.md`; revision and CI
+fields remain pending until this tree is committed and pushed.
 
-The Phase 0 public GitHub repository exists. Phase 8 commit `bdb5d1c` passed the
-GitHub Actions quality gate in run `33707389389` and produced a 14-day debug APK
-artifact. The CI result for the final Phase 9 documentation commit is necessarily
-external to that commit and must be recorded in GitHub Actions and the final
-handoff after push.
+Physical validation remains **BLOCKED** because no C500, C510W, Mi Stick,
+emulator or connected adb device is available. Build, JVM, fake-player and port
+reachability results are never treated as physical playback evidence.
 
-## Completed implementation
+## Implemented scope
 
 - Phase 0: public repository, project contract, Apache-2.0 license and repository
   hygiene.
-- Phase 1: buildable API 37 Android TV shell, Windows CI definition, D-pad-first
+- Phase 1: Android TV shell, Windows command-line build workflow, D-pad-first
   Compose structure and Turkish/English resources.
 - Phase 2: camera models, DataStore persistence, credential profiles, AES/GCM
   Android Keystore abstraction, validation and redaction.
-- Phase 3: API 37 local-network permission policy, ONVIF WS-Discovery probe/parser,
+- Phase 3: local-network permission policy, ONVIF WS-Discovery probe/parser,
   multicast transport, deduplication, identity matching and discovery repository.
 - Phase 4: camera discovery/setup/selection states and remote-first UI flow.
 - Phase 5: Media3 RTSP layer, safe URI construction, `/stream2` preview behavior,
@@ -32,57 +31,62 @@ handoff after push.
 - Phase 6: dynamic wall layouts, focus navigation, `/stream2` wall and `/stream1`
   fullscreen resource coordination.
 - Phase 7: retry/backoff, connectivity monitoring, lifecycle recovery, decoder
-  error isolation, keep-screen-on control and debug diagnostics. Completed by
-  commit `7e945c8`; GitHub Actions passed.
-- Phase 8: empty adb device check, redacted acceptance matrix and detailed
-  Windows/PowerShell manual test plan. Commit `bdb5d1c`; GitHub Actions passed.
+  error isolation, keep-screen-on control and debug diagnostics.
+- Phase 8: redacted acceptance matrix and Windows/PowerShell physical-device
+  plan. Hardware execution remains blocked.
 - Phase 9: Turkish-first README, architecture/troubleshooting documents,
-  changelog, roadmap and third-party notices. No tag or GitHub Release is claimed.
+  changelog, roadmap and third-party notices. No tag or GitHub Release is
+  claimed.
 
-## Tests actually run
+## Current verification contract
 
-- Standard PowerShell quality gate — PASS:
+The PowerShell quality gate now checks formatting, both debug and release lint,
+JVM tests, debug APK assembly, debug instrumented-test APK assembly, minified
+release assembly, secret hygiene and whitespace:
 
-  ```powershell
-  $env:JAVA_HOME = 'C:\Program Files\Unity\Hub\Editor\6000.3.21f1\Editor\Data\PlaybackEngines\AndroidPlayer\OpenJDK'
-  $env:GRADLE_USER_HOME = "$PWD\.gradle-user-home"
-  $env:ANDROID_USER_HOME = "$PWD\.android-user-home"
-  .\gradlew.bat --no-daemon spotlessApply spotlessCheck lintDebug testDebugUnitTest assembleDebug assembleDebugAndroidTest
-  ```
+```powershell
+.\scripts\invoke-quality-gate.ps1 `
+    -JavaHomePath $env:JAVA_HOME `
+    -SdkRootPath "$PWD\.android-sdk"
+```
 
-  The combined command exited with code 0.
-- JVM unit tests — PASS: 116 tests, 0 failures, 0 errors, 0 skipped.
-- `assembleDebugAndroidTest` — PASS for APK compilation only;
-  `connectedDebugAndroidTest` was not executed.
-- `& '.\.android-sdk\platform-tools\adb.exe' devices -l` — exit code 0 with an
-  empty device list.
-- `.\scripts\check-no-secrets.ps1` — PASS, 147 files checked, exit code 0.
-- `git diff --check` — PASS, exit code 0.
-- Debug APK — 17,754,065 bytes; SHA-256
-  `033AFA27F691852D11E56BF86C8FF8B4082AE8BF44E47DA097BE7C6A1CCCC0E2`.
+`assembleDebugAndroidTest` proves only that the instrumented-test sources and APK
+compile. It does not execute them. With exactly one authorized physical Mi Stick
+connected, `connectedDebugAndroidTest` must run before any Camera Account
+credential scenario, as described in `docs/MANUAL_TEST_PLAN_TR.md`.
 
-## Manual and external status
+Current integrated evidence:
 
-- Windows 11/PowerShell workflow: PASS.
-- JDK 17 from the Unity Android support bundle: PASS.
-- Project-local API 37 command-line SDK: PASS.
-- Emulator/AVD and connected adb device: NOT AVAILABLE; adb returned an empty
-  device list.
-- Physical C500/C510W discovery and RTSP: BLOCKED.
-- Physical Mi Stick D-pad, fullscreen, lifecycle and 15-minute wall tests:
-  BLOCKED.
-- Real wrong-password, reconnect, decoder/memory and logcat-redaction scenarios:
-  BLOCKED.
-- Phase 7 GitHub Actions: PASS, run `33706625607`.
-- Phase 8 GitHub Actions: PASS, run `33707389389`; debug artifact uploaded.
-- Final Phase 9 GitHub Actions: recorded externally after this document's commit.
+| Evidence | Status |
+| --- | --- |
+| Final integrated quality gate | PASS; PowerShell gate exited 0 |
+| Final JVM test count | PASS; 145 tests, 0 failures/errors/skipped |
+| Final debug APK size and SHA-256 | PASS; 17,805,949 bytes, `8C7317B0EE7B20801ECE0CBC936AE46E5D9AD814A2965756ED7F34848F4FAE9A` |
+| Final revision and GitHub Actions run | PENDING PUSH |
+| Physical Mi Stick instrumented tests | BLOCKED |
+| Physical camera and Android TV acceptance | BLOCKED |
 
-No port reachability, build result, fake stream or JVM test has been treated as
-evidence of successful physical playback.
+## Historical milestones — not current evidence
+
+The following references describe earlier repository snapshots only:
+
+- Phase 7 commit `7e945c8` had an observed passing GitHub Actions run.
+- Phase 8 commit `bdb5d1c` had observed passing GitHub Actions run
+  `33707389389` and a temporary debug artifact.
+- The exact historical unit-test count, scanned-file count and APK hash retained
+  in `docs/TEST_REPORT.md` apply only to that pre-remediation record. They do not
+  describe the current working tree.
+
+Do not copy historical hashes, counts or run IDs into current release notes.
+Replace the `NOT RECORDED` fields only with output captured after the final
+integrated build and, for CI, after the corresponding revision is pushed and
+observed.
 
 ## Remaining external validation
 
-When hardware is available, execute every Phase 8 scenario from the manual test
-plan and update each BLOCKED/NOT RUN entry with redacted evidence. Until then, do
-not create a compatibility claim, release tag or GitHub Release based on build,
-fake-player or port-reachability evidence alone.
+When hardware is available, follow the manual plan in order: connect and
+authorize a single Mi Stick, run `connectedDebugAndroidTest` before entering
+credentials, explicitly acknowledge any uninstall/`pm clear` data loss, close
+other RTSP clients, and execute every physical scenario with redacted evidence.
+Until then, do not create a compatibility claim, release tag or GitHub Release
+based on build, fake-player or port-reachability evidence alone.

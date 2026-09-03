@@ -31,6 +31,7 @@ fun TvFocusableSurface(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     selected: Boolean = false,
+    enabled: Boolean = true,
     requestInitialFocus: Boolean = false,
     content: @Composable BoxScope.() -> Unit,
 ) {
@@ -57,7 +58,7 @@ fun TvFocusableSurface(
                     role = Role.Button
                     this.selected = selected
                 }
-                .clickable(onClick = onClick)
+                .clickable(enabled = enabled, onClick = onClick)
                 .background(MaterialTheme.colorScheme.surface, shape)
                 .border(BorderStroke(if (focused) 4.dp else 2.dp, borderColor), shape)
                 .padding(12.dp),

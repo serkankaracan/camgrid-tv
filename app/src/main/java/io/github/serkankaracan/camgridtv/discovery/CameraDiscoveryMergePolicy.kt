@@ -94,12 +94,21 @@ class CameraDiscoveryMergePolicy(
         discovered: DiscoveredOnvifDevice,
         selected: Boolean,
         selectionOrder: Int?,
-    ): CameraDevice =
-        if (previous == null) {
+    ): CameraDevice {
+        val discoveredXAddr =
+            DiscoveryAddressNormalizer.xAddrsForHost(discovered.xAddrs, discovered.host)
+                .firstOrNull()
+                ?.value
+        val safeXAddr =
+            discoveredXAddr
+                ?: previous?.onvifXAddr?.let {
+                    DiscoveryAddressNormalizer.xAddrForHost(it, discovered.host)?.value
+                }
+        return if (previous == null) {
             CameraDevice(
                 id = discovered.id,
                 endpointUuid = discovered.endpointUuid,
-                onvifXAddr = discovered.xAddrs.firstOrNull(),
+                onvifXAddr = safeXAddr,
                 displayName = discovered.discoveredName,
                 discoveredName = discovered.discoveredName,
                 manufacturer = discovered.manufacturer,
@@ -115,7 +124,8 @@ class CameraDiscoveryMergePolicy(
         } else {
             previous.copy(
                 endpointUuid = discovered.endpointUuid ?: previous.endpointUuid,
-                onvifXAddr = discovered.xAddrs.firstOrNull() ?: previous.onvifXAddr,
+                onvifXAddr = safeXAddr,
+                displayName = previous.displayNameAfterDiscovery(discovered.discoveredName),
                 discoveredName = discovered.discoveredName,
                 manufacturer = discovered.manufacturer ?: previous.manufacturer,
                 model = discovered.model ?: previous.model,
@@ -127,4 +137,12 @@ class CameraDiscoveryMergePolicy(
                     maxOf(previous.lastSeenEpochMillis, discovered.lastSeenEpochMillis),
             )
         }
+    }
 }
+
+internal fun CameraDevice.displayNameAfterDiscovery(discoveredName: String): String =
+    if (this.discoveredName != null && displayName == this.discoveredName) {
+        discoveredName
+    } else {
+        displayName
+    }

@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -61,17 +60,12 @@ fun CamGridApp(
             )
         }
 
-    LaunchedEffect(activity) {
-        val rationale = activity?.let(viewModel::shouldShowPermissionRationale) ?: false
-        viewModel.refreshPermission(shouldShowRationale = rationale)
-    }
     DisposableEffect(lifecycleOwner, activity) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_START -> {
                     val rationale = activity?.let(viewModel::shouldShowPermissionRationale) ?: false
-                    viewModel.refreshPermission(shouldShowRationale = rationale)
-                    viewModel.onForeground()
+                    viewModel.onForeground(shouldShowRationale = rationale)
                 }
                 Lifecycle.Event.ON_STOP -> viewModel.onBackground()
                 else -> Unit
@@ -79,7 +73,8 @@ fun CamGridApp(
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
-            viewModel.onForeground()
+            val rationale = activity?.let(viewModel::shouldShowPermissionRationale) ?: false
+            viewModel.onForeground(shouldShowRationale = rationale)
         } else {
             viewModel.onBackground()
         }
@@ -115,6 +110,14 @@ fun CamGridApp(
                     state = state.cameraSetup,
                     onAction = viewModel::onCameraSetupAction,
                     modifier = Modifier.fillMaxSize(),
+                    videoSurface = { cameraId, surfaceModifier ->
+                        val player = viewModel.connectionPreviewPlayerFor(cameraId)
+                        Media3PlayerViewHost(
+                            player = player,
+                            modifier = surfaceModifier,
+                            keepScreenOn = false,
+                        )
+                    },
                 )
             is CamGridRoute.Wall ->
                 CameraWallScreen(

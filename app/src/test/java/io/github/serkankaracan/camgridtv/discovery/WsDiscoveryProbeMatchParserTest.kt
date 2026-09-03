@@ -68,7 +68,7 @@ class WsDiscoveryProbeMatchParserTest {
             (parser.parse(xml.toByteArray(), SOURCE_HOST) as WsDiscoveryParseResult.Success)
                 .matches
                 .single()
-        val device = checkNotNull(DiscoveredOnvifDeviceFactory().create(match, 1L))
+        val device = checkNotNull(DiscoveredOnvifDeviceFactory("ONVIF camera").create(match, 1L))
 
         assertEquals(120, device.discoveredName.length)
     }

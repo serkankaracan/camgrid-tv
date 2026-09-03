@@ -1,15 +1,19 @@
 package io.github.serkankaracan.camgridtv.ui
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
@@ -19,6 +23,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.pressKey
 import androidx.test.platform.app.InstrumentationRegistry
 import io.github.serkankaracan.camgridtv.R
@@ -301,8 +306,187 @@ class DiscoveryAndSetupScreenTest {
 
         composeRule.onNodeWithTag(UiTestTags.UsernameField).assertIsNotEnabled()
         composeRule.onNodeWithTag(UiTestTags.PasswordField).assertIsNotEnabled()
-        composeRule.onNodeWithTag(UiTestTags.testConnection("testing")).assertIsNotEnabled()
+        composeRule.onNodeWithTag(UiTestTags.setupCamera("testing")).assertIsNotEnabled()
+        composeRule.onNodeWithTag(UiTestTags.setupCamera("other")).assertIsNotEnabled()
+        composeRule.onNodeWithTag(UiTestTags.testConnection("testing")).assertIsEnabled()
         composeRule.onNodeWithTag(UiTestTags.testConnection("other")).assertIsNotEnabled()
+    }
+
+    @Test
+    fun pendingSelectionWriteLocksSetupActionsUntilRepositoryStateCatchesUp() {
+        val initialCameras =
+            listOf(
+                SetupCameraUiModel(id = "pending", displayName = "Pending camera"),
+                SetupCameraUiModel(id = "other", displayName = "Other camera"),
+            )
+        val setupState = mutableStateOf(CameraSetupUiState(cameras = initialCameras))
+        composeRule.setContent {
+            CamGridTheme {
+                CameraSetupScreen(
+                    state = setupState.value,
+                    onAction = { action ->
+                        if (
+                            action == CameraSetupUiAction.CameraSelectionChanged("pending", false)
+                        ) {
+                            setupState.value =
+                                CameraSetupUiState(
+                                    cameras = initialCameras,
+                                    canStartWatching = true,
+                                    selectionUpdateCameraId = "pending",
+                                )
+                        }
+                    },
+                )
+            }
+        }
+
+        val pendingCard = composeRule.onNodeWithTag(UiTestTags.setupCamera("pending"))
+        pendingCard.performSemanticsAction(SemanticsActions.RequestFocus)
+        pendingCard.assertIsFocused().performClick().assertIsFocused().assertIsEnabled()
+
+        composeRule.onNodeWithTag(UiTestTags.setupCamera("other")).assertIsNotEnabled()
+        composeRule.onNodeWithTag(UiTestTags.editCamera("pending")).assertIsNotEnabled()
+        composeRule.onNodeWithTag(UiTestTags.testConnection("pending")).assertIsNotEnabled()
+        composeRule.onNodeWithTag(UiTestTags.UsernameField).assertIsNotEnabled()
+        composeRule.onNodeWithTag(UiTestTags.StartWatchingAction).assertIsNotEnabled()
+
+        composeRule.runOnIdle {
+            setupState.value =
+                CameraSetupUiState(
+                    cameras =
+                        initialCameras.map { camera ->
+                            if (camera.id == "pending") camera.copy(selected = false) else camera
+                        }
+                )
+        }
+
+        composeRule.onNodeWithTag(UiTestTags.setupCamera("pending")).assertIsFocused()
+    }
+
+    @Test
+    fun pendingSharedProfileWriteLocksTestAndRetainsToggleFocus() {
+        val cameras =
+            listOf(
+                SetupCameraUiModel(id = "camera", displayName = "Camera"),
+                SetupCameraUiModel(id = "other", displayName = "Other camera"),
+            )
+        val setupState = mutableStateOf(CameraSetupUiState(cameras = cameras))
+        composeRule.setContent {
+            CamGridTheme {
+                CameraSetupScreen(
+                    state = setupState.value,
+                    onAction = { action ->
+                        if (action == CameraSetupUiAction.SharedProfileChanged(false)) {
+                            setupState.value =
+                                CameraSetupUiState(
+                                    cameras = cameras,
+                                    useSharedProfile = false,
+                                    canStartWatching = true,
+                                    sharedProfileUpdateInProgress = true,
+                                )
+                        }
+                    },
+                )
+            }
+        }
+
+        val sharedProfileToggle = composeRule.onNodeWithTag(UiTestTags.SharedProfileToggle)
+        sharedProfileToggle.performSemanticsAction(SemanticsActions.RequestFocus)
+        sharedProfileToggle.assertIsFocused().performClick().assertIsFocused().assertIsEnabled()
+
+        composeRule.onNodeWithTag(UiTestTags.setupCamera("camera")).assertIsNotEnabled()
+        composeRule.onNodeWithTag(UiTestTags.editCamera("camera")).assertIsNotEnabled()
+        composeRule.onNodeWithTag(UiTestTags.testConnection("camera")).assertIsNotEnabled()
+        composeRule.onNodeWithTag(UiTestTags.UsernameField).assertIsNotEnabled()
+        composeRule.onNodeWithTag(UiTestTags.PasswordField).assertIsNotEnabled()
+        composeRule.onNodeWithTag(UiTestTags.StartWatchingAction).assertIsNotEnabled()
+
+        composeRule.runOnIdle {
+            setupState.value = CameraSetupUiState(cameras = cameras, useSharedProfile = false)
+        }
+
+        composeRule.onNodeWithTag(UiTestTags.SharedProfileToggle).assertIsFocused()
+    }
+
+    @Test
+    fun successfulConnectionPreviewShowsOnlyTestedCameraWithoutTakingDpadFocus() {
+        val initialState =
+            CameraSetupUiState(
+                cameras =
+                    listOf(
+                        SetupCameraUiModel(
+                            id = "tested",
+                            displayName =
+                                "A very long living-room camera name that must remain bounded",
+                        ),
+                        SetupCameraUiModel(
+                            id = "other",
+                            displayName = "Other camera",
+                        ),
+                    )
+            )
+        val setupState = mutableStateOf(initialState)
+        composeRule.setContent {
+            CamGridTheme {
+                CameraSetupScreen(
+                    state = setupState.value,
+                    onAction = { action ->
+                        if (action == CameraSetupUiAction.TestConnection("tested")) {
+                            setupState.value =
+                                CameraSetupUiState(
+                                    cameras =
+                                        initialState.cameras.map { camera ->
+                                            if (camera.id == "tested") {
+                                                camera.copy(
+                                                    connectionState = ConnectionTestUiState.Testing
+                                                )
+                                            } else {
+                                                camera
+                                            }
+                                        },
+                                    connectionPreviewCameraId = "tested",
+                                )
+                        }
+                    },
+                    videoSurface = { cameraId, modifier ->
+                        Box(modifier = modifier.testTag("fake-preview-$cameraId"))
+                    },
+                )
+            }
+        }
+
+        val testedAction = composeRule.onNodeWithTag(UiTestTags.testConnection("tested"))
+        testedAction.performSemanticsAction(SemanticsActions.RequestFocus)
+        testedAction.assertIsFocused().performClick().assertIsFocused().assertIsEnabled()
+
+        composeRule.onNodeWithTag(UiTestTags.SetupConnectionPreview).assertIsDisplayed()
+        composeRule.onNodeWithTag(UiTestTags.SetupCameraList).assertIsDisplayed()
+        composeRule.onNodeWithTag(UiTestTags.connectionPreview("tested")).assertIsDisplayed()
+        composeRule.onNodeWithTag("fake-preview-tested").assertIsDisplayed()
+        composeRule.onNodeWithTag("fake-preview-other").assertDoesNotExist()
+        composeRule.onNodeWithTag(UiTestTags.SetupConnectionPreviewStatus).assertIsDisplayed()
+        composeRule.onNodeWithTag(UiTestTags.editCamera("tested")).assertIsDisplayed()
+        composeRule.onNodeWithTag(UiTestTags.testConnection("tested")).assertIsDisplayed()
+        composeRule.onNodeWithTag(UiTestTags.PasswordField).assertIsDisplayed()
+        composeRule.onNodeWithTag(UiTestTags.StartWatchingAction).assertIsDisplayed()
+
+        composeRule.runOnIdle {
+            setupState.value =
+                CameraSetupUiState(
+                    cameras =
+                        initialState.cameras.map { camera ->
+                            if (camera.id == "tested") {
+                                camera.copy(connectionState = ConnectionTestUiState.Connected)
+                            } else {
+                                camera
+                            }
+                        },
+                    connectionPreviewCameraId = "tested",
+                )
+        }
+
+        composeRule.onNodeWithTag(UiTestTags.testConnection("tested")).assertIsFocused()
+        composeRule.onNodeWithTag(UiTestTags.UsernameField).assertIsEnabled()
     }
 
     private fun cameraFixtures(count: Int): List<DiscoveryCameraUiModel> =

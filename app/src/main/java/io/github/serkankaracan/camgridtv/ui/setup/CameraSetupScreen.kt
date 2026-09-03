@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -25,10 +26,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Button
@@ -36,7 +39,9 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import io.github.serkankaracan.camgridtv.R
+import io.github.serkankaracan.camgridtv.ui.components.CameraVideoSurface
 import io.github.serkankaracan.camgridtv.ui.components.ConnectionStatusLabel
+import io.github.serkankaracan.camgridtv.ui.components.EmptyCameraVideoSurface
 import io.github.serkankaracan.camgridtv.ui.components.TvFocusableSurface
 import io.github.serkankaracan.camgridtv.ui.components.TvTextField
 import io.github.serkankaracan.camgridtv.ui.components.UiTestTags
@@ -46,10 +51,20 @@ fun CameraSetupScreen(
     state: CameraSetupUiState,
     onAction: (CameraSetupUiAction) -> Unit,
     modifier: Modifier = Modifier,
+    videoSurface: CameraVideoSurface = { _, surfaceModifier ->
+        EmptyCameraVideoSurface(surfaceModifier)
+    },
 ) {
     val selectedCount = state.cameras.count(SetupCameraUiModel::selected)
     val credentialControlsEnabled =
         !state.submitting &&
+            !state.selectionUpdateInProgress &&
+            !state.sharedProfileUpdateInProgress &&
+            !state.connectionTestInProgress &&
+            state.credentialRecovery == CredentialRecoveryUiState.NotRequired
+    val sharedProfileToggleEnabled =
+        !state.submitting &&
+            !state.selectionUpdateInProgress &&
             !state.connectionTestInProgress &&
             state.credentialRecovery == CredentialRecoveryUiState.NotRequired
     val initialFocusRequester = remember { FocusRequester() }
@@ -84,49 +99,118 @@ fun CameraSetupScreen(
                     ),
                 fontSize = 18.sp,
             )
-            LazyColumn(
+            val previewCamera = state.connectionPreviewCamera
+            Row(
                 modifier = Modifier.weight(1f).fillMaxWidth().padding(vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                items(state.cameras, key = SetupCameraUiModel::id) { camera ->
-                    SetupCameraCard(camera = camera, state = state, onAction = onAction)
+                LazyColumn(
+                    modifier =
+                        Modifier.weight(if (previewCamera == null) 1f else 0.58f)
+                            .fillMaxHeight()
+                            .testTag(UiTestTags.SetupCameraList),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    items(state.cameras, key = SetupCameraUiModel::id) { camera ->
+                        SetupCameraCard(camera = camera, state = state, onAction = onAction)
+                    }
+                }
+                previewCamera?.let { camera ->
+                    ConnectionPreview(
+                        camera = camera,
+                        videoSurface = videoSurface,
+                        modifier = Modifier.weight(0.42f).fillMaxHeight(),
+                    )
                 }
             }
-            TvTextField(
-                label = stringResource(R.string.username),
-                value = state.username,
-                onValueChange = { onAction(CameraSetupUiAction.UsernameChanged(it)) },
-                enabled = credentialControlsEnabled,
-                modifier =
-                    Modifier.focusRequester(initialFocusRequester)
-                        .testTag(UiTestTags.UsernameField),
-            )
-            TvTextField(
-                label = stringResource(R.string.password),
-                value = state.password,
-                onValueChange = { onAction(CameraSetupUiAction.PasswordChanged(it)) },
-                password = true,
-                enabled = credentialControlsEnabled,
-                modifier = Modifier.padding(top = 10.dp).testTag(UiTestTags.PasswordField),
-            )
-            SharedProfileToggle(
-                checked = state.useSharedProfile,
-                enabled = credentialControlsEnabled,
-                onCheckedChange = { onAction(CameraSetupUiAction.SharedProfileChanged(it)) },
-            )
             Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-                horizontalArrangement = Arrangement.End,
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                TvTextField(
+                    label = stringResource(R.string.username),
+                    value = state.username,
+                    onValueChange = { onAction(CameraSetupUiAction.UsernameChanged(it)) },
+                    enabled = credentialControlsEnabled,
+                    modifier =
+                        Modifier.weight(1f)
+                            .focusRequester(initialFocusRequester)
+                            .testTag(UiTestTags.UsernameField),
+                )
+                TvTextField(
+                    label = stringResource(R.string.password),
+                    value = state.password,
+                    onValueChange = { onAction(CameraSetupUiAction.PasswordChanged(it)) },
+                    password = true,
+                    enabled = credentialControlsEnabled,
+                    modifier = Modifier.weight(1f).testTag(UiTestTags.PasswordField),
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                SharedProfileToggle(
+                    checked = state.useSharedProfile,
+                    // Keep the initiating control focused while its repository write is pending.
+                    enabled = sharedProfileToggleEnabled,
+                    onCheckedChange = { onAction(CameraSetupUiAction.SharedProfileChanged(it)) },
+                    modifier = Modifier.weight(1f),
+                )
                 Button(
                     onClick = { onAction(CameraSetupUiAction.StartWatching) },
-                    enabled = state.canStartWatching && !state.submitting,
+                    enabled =
+                        state.canStartWatching &&
+                            !state.submitting &&
+                            !state.selectionUpdateInProgress &&
+                            !state.sharedProfileUpdateInProgress &&
+                            !state.connectionTestInProgress,
                     modifier = Modifier.testTag(UiTestTags.StartWatchingAction),
                 ) {
                     Text(stringResource(R.string.start_watching))
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ConnectionPreview(
+    camera: SetupCameraUiModel,
+    videoSurface: CameraVideoSurface,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .fillMaxHeight()
+                .background(Color.Black, RoundedCornerShape(10.dp))
+                .testTag(UiTestTags.SetupConnectionPreview)
+    ) {
+        Box(modifier = Modifier.fillMaxSize().testTag(UiTestTags.connectionPreview(camera.id))) {
+            videoSurface(camera.id, Modifier.fillMaxSize())
+        }
+        Text(
+            text = camera.displayName,
+            modifier =
+                Modifier.align(Alignment.TopStart)
+                    .fillMaxWidth()
+                    .background(Color.Black.copy(alpha = 0.68f))
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+            fontSize = 18.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        ConnectionStatus(
+            camera = camera,
+            modifier =
+                Modifier.align(Alignment.BottomStart)
+                    .background(Color.Black.copy(alpha = 0.68f))
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+            testTag = UiTestTags.SetupConnectionPreviewStatus,
+        )
     }
 }
 
@@ -194,6 +278,12 @@ private fun SetupCameraCard(
             onAction(CameraSetupUiAction.CameraSelectionChanged(camera.id, !camera.selected))
         },
         selected = camera.selected,
+        enabled =
+            (!state.selectionUpdateInProgress || state.selectionUpdateCameraId == camera.id) &&
+                !state.connectionTestInProgress &&
+                !state.submitting &&
+                !state.sharedProfileUpdateInProgress &&
+                state.credentialRecovery == CredentialRecoveryUiState.NotRequired,
         modifier = Modifier.fillMaxWidth().testTag(UiTestTags.setupCamera(camera.id)),
     ) {
         Column {
@@ -202,29 +292,57 @@ private fun SetupCameraCard(
                     label = stringResource(R.string.edit_camera_name),
                     value = state.editedCameraName,
                     onValueChange = { onAction(CameraSetupUiAction.CameraNameChanged(it)) },
+                    enabled =
+                        !state.submitting &&
+                            !state.selectionUpdateInProgress &&
+                            !state.sharedProfileUpdateInProgress &&
+                            !state.connectionTestInProgress &&
+                            state.credentialRecovery == CredentialRecoveryUiState.NotRequired,
                     modifier =
                         Modifier.focusRequester(editorFocusRequester)
                             .testTag(UiTestTags.editCamera(camera.id)),
                 )
                 Button(
                     onClick = { onAction(CameraSetupUiAction.SaveCameraName) },
+                    enabled =
+                        !state.submitting &&
+                            !state.selectionUpdateInProgress &&
+                            !state.sharedProfileUpdateInProgress &&
+                            !state.connectionTestInProgress &&
+                            state.credentialRecovery == CredentialRecoveryUiState.NotRequired,
                     modifier = Modifier.padding(top = 8.dp),
                 ) {
                     Text(stringResource(R.string.save))
                 }
             } else {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column {
-                        Text(text = camera.displayName, fontSize = 22.sp)
-                        camera.detail?.let { Text(text = it, fontSize = 15.sp) }
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = camera.displayName,
+                        fontSize = 22.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    camera.detail?.let {
+                        Text(
+                            text = it,
+                            fontSize = 15.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.End,
+                    ) {
                         Button(
                             onClick = { onAction(CameraSetupUiAction.EditCameraName(camera.id)) },
+                            enabled =
+                                !state.submitting &&
+                                    !state.selectionUpdateInProgress &&
+                                    !state.sharedProfileUpdateInProgress &&
+                                    !state.connectionTestInProgress &&
+                                    state.credentialRecovery ==
+                                        CredentialRecoveryUiState.NotRequired,
                             modifier = Modifier.testTag(UiTestTags.editCamera(camera.id)),
                         ) {
                             Text(stringResource(R.string.edit_camera_name))
@@ -234,10 +352,15 @@ private fun SetupCameraCard(
                             enabled =
                                 camera.selected &&
                                     !state.submitting &&
-                                    !state.connectionTestInProgress &&
+                                    !state.selectionUpdateInProgress &&
+                                    !state.sharedProfileUpdateInProgress &&
+                                    (!state.connectionTestInProgress ||
+                                        camera.connectionState == ConnectionTestUiState.Testing) &&
                                     state.credentialRecovery ==
                                         CredentialRecoveryUiState.NotRequired,
-                            modifier = Modifier.testTag(UiTestTags.testConnection(camera.id)),
+                            modifier =
+                                Modifier.padding(start = 10.dp)
+                                    .testTag(UiTestTags.testConnection(camera.id)),
                         ) {
                             Text(stringResource(R.string.test_connection))
                         }
@@ -250,7 +373,11 @@ private fun SetupCameraCard(
 }
 
 @Composable
-private fun ConnectionStatus(camera: SetupCameraUiModel) {
+private fun ConnectionStatus(
+    camera: SetupCameraUiModel,
+    modifier: Modifier = Modifier,
+    testTag: String = UiTestTags.connectionStatus(camera.id),
+) {
     val status =
         when (camera.connectionState) {
             ConnectionTestUiState.NotTested -> null
@@ -266,7 +393,8 @@ private fun ConnectionStatus(camera: SetupCameraUiModel) {
             cameraId = camera.id,
             labelRes = label,
             isError = error,
-            modifier = Modifier.padding(top = 8.dp),
+            modifier = modifier.padding(top = 8.dp),
+            testTag = testTag,
         )
     }
 }
@@ -276,13 +404,14 @@ private fun SharedProfileToggle(
     checked: Boolean,
     enabled: Boolean,
     onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var focused by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(8.dp)
     Row(
         modifier =
-            Modifier.fillMaxWidth()
-                .padding(top = 10.dp)
+            modifier
+                .fillMaxWidth()
                 .onFocusChanged { focused = it.isFocused }
                 .toggleable(
                     value = checked,

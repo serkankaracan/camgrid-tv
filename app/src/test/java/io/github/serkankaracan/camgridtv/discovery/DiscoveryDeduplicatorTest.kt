@@ -29,8 +29,32 @@ class DiscoveryDeduplicatorTest {
 
         assertEquals("old-id", result.id)
         assertEquals("192.168.50.110", result.host)
-        assertEquals(2, result.xAddrs.size)
+        assertEquals(listOf(moved.xAddrs.single()), result.xAddrs)
         assertEquals(2L, result.lastSeenEpochMillis)
+    }
+
+    @Test
+    fun `newest source host cannot inherit a stale xaddr from an older observation`() {
+        val old =
+            device(
+                id = "old-id",
+                uuid = UUID,
+                host = "192.168.50.100",
+                xAddr = "http://192.168.50.100:2020/onvif/device_service",
+                seen = 1L,
+            )
+        val movedWithoutAddress =
+            old.copy(
+                id = "new-id",
+                host = "192.168.50.110",
+                xAddrs = emptyList(),
+                lastSeenEpochMillis = 2L,
+            )
+
+        val result = deduplicator.deduplicate(listOf(old, movedWithoutAddress)).single()
+
+        assertEquals("192.168.50.110", result.host)
+        assertEquals(emptyList<String>(), result.xAddrs)
     }
 
     @Test

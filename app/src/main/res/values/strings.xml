@@ -15,6 +15,7 @@
     <string name="discovery_no_local_network">Connect this TV to the same Wi-Fi or Ethernet network as the cameras, then scan again.</string>
     <string name="discovery_network_lost">The local network changed during the scan. Check the connection and scan again.</string>
     <string name="discovery_transport_unavailable">The local discovery transport could not start. Check local network permission and try again.</string>
+    <string name="generic_onvif_camera">ONVIF camera</string>
     <string name="camera_account_required">Camera account details required</string>
     <string name="camera_account_explanation">Use the separate Camera Account created in the camera app, not your cloud, Wi-Fi, or router password.</string>
     <string name="credential_recovery_required">Stored camera credentials can no longer be unlocked. Clear them, then enter the camera account again. No password was recovered or exposed.</string>

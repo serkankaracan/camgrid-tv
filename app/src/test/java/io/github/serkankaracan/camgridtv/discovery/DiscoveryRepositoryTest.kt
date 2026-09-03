@@ -21,7 +21,13 @@ class DiscoveryRepositoryTest {
             }
         var time = 0L
         val snapshots =
-            DefaultDiscoveryRepository(client, wallClockMillis = { ++time }).scan().toList()
+            DefaultDiscoveryRepository(
+                    client = client,
+                    deviceFactory = DiscoveredOnvifDeviceFactory("ONVIF camera"),
+                    wallClockMillis = { ++time },
+                )
+                .scan()
+                .toList()
 
         assertTrue(snapshots.first().isScanning)
         assertFalse(snapshots.last().isScanning)

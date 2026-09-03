@@ -31,17 +31,26 @@ import io.github.serkankaracan.camgridtv.ui.discovery.LocalNetworkPermissionUiSt
 import io.github.serkankaracan.camgridtv.ui.fullscreen.FullscreenUiAction
 import io.github.serkankaracan.camgridtv.ui.fullscreen.FullscreenUiState
 import io.github.serkankaracan.camgridtv.ui.navigation.CamGridRoute
+import io.github.serkankaracan.camgridtv.ui.navigation.LocalNetworkAccessDecision
+import io.github.serkankaracan.camgridtv.ui.navigation.LocalNetworkAccessPolicy
+import io.github.serkankaracan.camgridtv.ui.navigation.LocalRouteActionPolicy
+import io.github.serkankaracan.camgridtv.ui.navigation.LocalRouteSurface
 import io.github.serkankaracan.camgridtv.ui.navigation.SavedCameraBootstrapAttemptGate
 import io.github.serkankaracan.camgridtv.ui.navigation.SavedCameraBootstrapDecision
 import io.github.serkankaracan.camgridtv.ui.navigation.SavedCameraBootstrapPolicy
 import io.github.serkankaracan.camgridtv.ui.setup.CameraSetupReadiness
 import io.github.serkankaracan.camgridtv.ui.setup.CameraSetupUiAction
 import io.github.serkankaracan.camgridtv.ui.setup.CameraSetupUiState
+import io.github.serkankaracan.camgridtv.ui.setup.ConnectionTestCredentialProfilePolicy
 import io.github.serkankaracan.camgridtv.ui.setup.ConnectionTestOperation
 import io.github.serkankaracan.camgridtv.ui.setup.ConnectionTestOperationGate
+import io.github.serkankaracan.camgridtv.ui.setup.ConnectionTestPlaybackAction
+import io.github.serkankaracan.camgridtv.ui.setup.ConnectionTestPlaybackPolicy
+import io.github.serkankaracan.camgridtv.ui.setup.ConnectionTestPreviewGate
 import io.github.serkankaracan.camgridtv.ui.setup.ConnectionTestUiState
 import io.github.serkankaracan.camgridtv.ui.setup.CredentialRecoveryUiState
 import io.github.serkankaracan.camgridtv.ui.setup.SetupCameraUiModel
+import io.github.serkankaracan.camgridtv.ui.setup.SharedProfileUpdateOperationGate
 import io.github.serkankaracan.camgridtv.ui.wall.CameraWallUiAction
 import io.github.serkankaracan.camgridtv.ui.wall.CameraWallUiState
 import io.github.serkankaracan.camgridtv.ui.wall.WallCameraUiModel
@@ -74,7 +83,8 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
         )
 
     private var route: CamGridRoute = CamGridRoute.Discovery
-    private var permission = permissionState(shouldShowRationale = false, requestCompleted = false)
+    private var permission =
+        permissionDecision(shouldShowRationale = false, requestCompleted = false).permissionUiState
     private var permissionRequestCompleted = false
     private var discoveryContent: DiscoveryContentUiState = DiscoveryContentUiState.Ready
     private var configuration = CameraConfiguration()
@@ -83,12 +93,16 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
     private var playbackStates: Map<String, PlaybackState> = emptyMap()
     private var connectionStates: Map<String, ConnectionTestUiState> = emptyMap()
     private var credentialRecovery = CredentialRecoveryUiState.NotRequired
+    private var selectionUpdateCameraId: String? = null
+    private val sharedProfileUpdateGate = SharedProfileUpdateOperationGate()
     private val connectionTestGate = ConnectionTestOperationGate()
+    private val connectionTestPreviewGate = ConnectionTestPreviewGate()
     private var discoveryJob: Job? = null
     private var discoveryFinalizationJob: Job? = null
     private var latestDiscoveryDevices: List<DiscoveredOnvifDevice> = emptyList()
     private var discoverySelectionOverrides: Map<String, Boolean> = emptyMap()
     private var connectionTestJob: Job? = null
+    private var connectionPreviewReleaseJob: Job? = null
     private var routeJob: Job? = null
     private var playbackRefreshJob: Job? = null
     private var routeOperationGeneration = 0L
@@ -146,7 +160,13 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
 
     fun refreshPermission(shouldShowRationale: Boolean, requestCompleted: Boolean = false) {
         permissionRequestCompleted = permissionRequestCompleted || requestCompleted
-        permission = permissionState(shouldShowRationale, permissionRequestCompleted)
+        val decision = permissionDecision(shouldShowRationale, permissionRequestCompleted)
+        applyPermissionDecision(decision)
+        if (!decision.allowsLocalWork) {
+            publish()
+            return
+        }
+        if (foreground) playbackCoordinator.onForeground()
         if (shouldStartDiscovery()) {
             startDiscovery()
         } else {
@@ -156,6 +176,7 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     fun onDiscoveryAction(action: DiscoveryUiAction) {
+        if (!allowsRouteAction(LocalRouteSurface.Discovery)) return
         when (action) {
             DiscoveryUiAction.RequestPermission,
             DiscoveryUiAction.OpenAppSettings -> Unit
@@ -178,10 +199,16 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     fun onCameraSetupAction(action: CameraSetupUiAction) {
+        if (!allowsRouteAction(LocalRouteSurface.CameraSetup)) return
+        if (selectionUpdateCameraId != null || sharedProfileUpdateGate.active != null) return
         when (action) {
-            is CameraSetupUiAction.CameraSelectionChanged ->
+            is CameraSetupUiAction.CameraSelectionChanged -> {
+                if (connectionTestGate.active != null) return
+                stopConnectionPreviewIfActive()
                 updateCameraSelection(action.cameraId, action.selected)
+            }
             is CameraSetupUiAction.EditCameraName -> {
+                if (connectionTestGate.active != null) return
                 val camera = configuration.cameras.firstOrNull { it.id == action.cameraId }
                 if (camera != null) {
                     setupDraft =
@@ -202,6 +229,7 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
             CameraSetupUiAction.SaveCameraName -> saveCameraName()
             is CameraSetupUiAction.UsernameChanged -> {
                 if (connectionTestGate.active != null) return
+                stopConnectionPreviewIfActive()
                 setupDraft =
                     setupDraft.copy(
                         username = action.value.take(CredentialValidator.MAX_USERNAME_LENGTH)
@@ -211,6 +239,7 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
             }
             is CameraSetupUiAction.PasswordChanged -> {
                 if (connectionTestGate.active != null) return
+                stopConnectionPreviewIfActive()
                 setupDraft =
                     setupDraft.copy(
                         password = action.value.take(CredentialValidator.MAX_PASSWORD_LENGTH)
@@ -219,7 +248,10 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
                 publish()
             }
             is CameraSetupUiAction.SharedProfileChanged -> {
-                if (connectionTestGate.active == null) changeSharedProfile(action.enabled)
+                if (connectionTestGate.active == null) {
+                    stopConnectionPreviewIfActive()
+                    changeSharedProfile(action.enabled)
+                }
             }
             is CameraSetupUiAction.TestConnection -> testConnection(action.cameraId)
             CameraSetupUiAction.StartWatching -> openWall()
@@ -228,6 +260,7 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     fun onCameraWallAction(action: CameraWallUiAction) {
+        if (!allowsRouteAction(LocalRouteSurface.Wall)) return
         when (action) {
             is CameraWallUiAction.OpenFullscreen -> openFullscreen(action.cameraId)
             CameraWallUiAction.RescanCameras -> returnToDiscoveryAndScan()
@@ -240,13 +273,24 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     fun onFullscreenAction(action: FullscreenUiAction) {
+        if (!allowsRouteAction(LocalRouteSurface.Fullscreen)) return
         when (action) {
             FullscreenUiAction.BackToWall -> restoreWall()
         }
     }
 
-    fun onForeground() {
+    fun onForeground(shouldShowRationale: Boolean) {
         foreground = true
+        val decision =
+            permissionDecision(
+                shouldShowRationale = shouldShowRationale,
+                requestCompleted = permissionRequestCompleted,
+            )
+        applyPermissionDecision(decision)
+        if (!decision.allowsLocalWork) {
+            publish()
+            return
+        }
         playbackCoordinator.onForeground()
         if (shouldStartDiscovery()) startDiscovery()
         maybeStartSavedCameraBootstrap()
@@ -260,14 +304,17 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
         val testingOperation = connectionTestGate.cancelActive()
         connectionTestJob?.cancel()
         connectionTestJob = null
+        val previewSession = connectionTestPreviewGate.cancelActive()
+        connectionPreviewReleaseJob?.cancel()
+        connectionPreviewReleaseJob = null
         if (testingOperation != null) {
             if (connectionStates[testingOperation.cameraId] == ConnectionTestUiState.Testing) {
                 connectionStates =
                     connectionStates +
                         (testingOperation.cameraId to ConnectionTestUiState.NotTested)
             }
-            playbackCoordinator.leaveScreen()
         }
+        if (testingOperation != null || previewSession != null) playbackCoordinator.leaveScreen()
         playbackCoordinator.onBackground()
         publish()
     }
@@ -275,10 +322,21 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
     fun playerFor(cameraId: String): Player? =
         (playbackCoordinator.activeEngineFor(cameraId) as? Media3PlaybackEngine)?.player
 
+    fun connectionPreviewPlayerFor(cameraId: String): Player? =
+        if (
+            route == CamGridRoute.CameraSetup &&
+                connectionTestPreviewGate.active?.cameraId == cameraId
+        ) {
+            playerFor(cameraId)
+        } else {
+            null
+        }
+
     override fun onCleared() {
         discoveryJob?.cancel()
         discoveryFinalizationJob?.cancel()
         playbackRefreshJob?.cancel()
+        connectionPreviewReleaseJob?.cancel()
         stopPlaybackAndTransientWork()
     }
 
@@ -286,7 +344,8 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
         if (
             !configurationLoaded ||
                 !foreground ||
-                permission != LocalNetworkPermissionUiState.Granted
+                permission != LocalNetworkPermissionUiState.Granted ||
+                route != CamGridRoute.Discovery
         ) {
             publish()
             return
@@ -305,6 +364,10 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
                 container.discoveryRepository.scan().collect { snapshot ->
                     latestDiscoveryDevices = snapshot.devices
                     captureLiveDiscoverySelections()
+                    if (snapshot.issue == DiscoveryIssue.PERMISSION_REQUIRED) {
+                        handleDiscoveryIssue(snapshot.issue)
+                        return@collect
+                    }
                     snapshot.issue?.let(::handleDiscoveryIssue)
                     val cameras = discoveryUiModels(snapshot.devices, discoverySelectionOverrides)
                     if (snapshot.isScanning) {
@@ -369,7 +432,15 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
 
     private fun handleDiscoveryIssue(issue: DiscoveryIssue) {
         if (issue == DiscoveryIssue.PERMISSION_REQUIRED) {
-            permission = LocalNetworkPermissionUiState.RationaleRequired
+            applyPermissionDecision(
+                LocalNetworkAccessPolicy.decide(
+                    permissionState =
+                        LocalNetworkPermissionState.Denied(shouldShowRationale = true),
+                    requestCompleted = permissionRequestCompleted,
+                    currentRoute = route,
+                )
+            )
+            publish()
         }
     }
 
@@ -409,6 +480,7 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
         }
 
     private fun continueToCameraSetup() {
+        if (!allowsRouteAction(LocalRouteSurface.Discovery)) return
         val selectedIds =
             discoveryContent.cameras().filter(DiscoveryCameraUiModel::selected).map { it.id }
         if (selectedIds.isEmpty()) return
@@ -438,6 +510,11 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     private fun updateCameraSelection(cameraId: String, selected: Boolean) {
+        val camera = configuration.cameras.firstOrNull { it.id == cameraId } ?: return
+        if (camera.selected == selected) return
+        selectionUpdateCameraId = cameraId
+        connectionStates = connectionStates - cameraId
+        publish()
         viewModelScope.launch {
             try {
                 container.cameraSelectionRepository.update { current ->
@@ -458,9 +535,13 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
                             }
                     )
                 }
+                configuration = container.cameraSelectionRepository.current()
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (_: Exception) {
+                // Keep the last repository-backed selection when the mutation fails.
+            } finally {
+                selectionUpdateCameraId = null
                 publish()
             }
         }
@@ -484,10 +565,14 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     private fun changeSharedProfile(enabled: Boolean) {
+        val previousValue = setupDraft.useSharedProfile
+        if (previousValue == enabled) return
+        val operation = sharedProfileUpdateGate.tryStart(enabled) ?: return
         setupDraft = setupDraft.copy(useSharedProfile = enabled)
         invalidateSuccessfulConnectionTests()
         publish()
         viewModelScope.launch {
+            var persistenceSucceeded = false
             try {
                 val current = container.cameraSelectionRepository.current()
                 if (enabled && current.credentialProfiles.any { it.id == SHARED_PROFILE_ID }) {
@@ -509,25 +594,55 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
                         )
                     }
                 }
+                val latest = container.cameraSelectionRepository.current()
+                if (sharedProfileUpdateGate.isCurrent(operation)) {
+                    configuration = latest
+                    persistenceSucceeded = true
+                }
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (_: Exception) {
-                // The UI remains usable and a later toggle can retry the local mutation.
+                // Restore the prior mode so the UI never claims a write that did not complete.
+            } finally {
+                if (sharedProfileUpdateGate.finish(operation)) {
+                    if (!persistenceSucceeded) {
+                        setupDraft = setupDraft.copy(useSharedProfile = previousValue)
+                    }
+                    publish()
+                }
             }
         }
     }
 
     private fun testConnection(cameraId: String) {
-        if (credentialRecovery != CredentialRecoveryUiState.NotRequired) return
+        if (
+            credentialRecovery != CredentialRecoveryUiState.NotRequired ||
+                route != CamGridRoute.CameraSetup ||
+                !foreground ||
+                selectionUpdateCameraId != null ||
+                sharedProfileUpdateGate.active != null ||
+                permission != LocalNetworkPermissionUiState.Granted
+        ) {
+            return
+        }
         val camera =
             configuration.cameras.firstOrNull { it.id == cameraId && it.selected } ?: return
         val operation = connectionTestGate.tryStart(cameraId) ?: return
+        stopConnectionPreviewIfActive()
         playbackCoordinator.leaveScreen()
         connectionStates = connectionStates + (cameraId to ConnectionTestUiState.Testing)
         publish()
         connectionTestJob = viewModelScope.launch {
             try {
-                val profileId = credentialProfileForTest(camera)
+                val selectedCamera =
+                    container.cameraSelectionRepository.current().cameras.firstOrNull {
+                        it.id == cameraId && it.selected
+                    }
+                if (selectedCamera == null) {
+                    completeConnectionTest(operation, ConnectionTestUiState.NotTested)
+                    return@launch
+                }
+                val profileId = credentialProfileForTest(selectedCamera)
                 if (profileId == null) {
                     completeConnectionTest(
                         operation,
@@ -536,7 +651,7 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
                     return@launch
                 }
                 val current = container.cameraSelectionRepository.current()
-                val currentCamera = current.cameras.firstOrNull { it.id == cameraId }
+                val currentCamera = current.cameras.firstOrNull { it.id == cameraId && it.selected }
                 val request = currentCamera?.let {
                     playbackRequest(
                         camera = it,
@@ -550,6 +665,8 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
                     return@launch
                 }
                 if (!connectionTestGate.isCurrent(operation)) return@launch
+                connectionTestPreviewGate.replace(cameraId)
+                publish()
                 playbackCoordinator.showGrid(listOf(request))
                 delay(CONNECTION_TEST_TIMEOUT_MILLIS)
                 if (connectionTestGate.isCurrent(operation)) {
@@ -596,6 +713,7 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     private fun showCredentialRecoveryRequired() {
+        if (permission != LocalNetworkPermissionUiState.Granted) return
         supersedeRouteOperations()
         discoveryJob?.cancel()
         discoveryJob = null
@@ -604,6 +722,9 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
         connectionTestGate.cancelActive()
         connectionTestJob?.cancel()
         connectionTestJob = null
+        connectionTestPreviewGate.cancelActive()
+        connectionPreviewReleaseJob?.cancel()
+        connectionPreviewReleaseJob = null
         playbackCoordinator.leaveScreen()
         playbackStates = emptyMap()
         connectionStates = emptyMap()
@@ -617,7 +738,11 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
         if (setupDraft.password.isNotEmpty() || setupDraft.username.isNotEmpty()) {
             return persistCredential(camera)
         }
-        return camera.credentialProfileId
+        return ConnectionTestCredentialProfilePolicy.storedProfileForTest(
+            assignedProfileId = camera.credentialProfileId,
+            useSharedProfile = setupDraft.useSharedProfile,
+            sharedProfileId = SHARED_PROFILE_ID,
+        )
     }
 
     private suspend fun persistCredential(camera: CameraDevice): String? {
@@ -691,32 +816,30 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     private fun updateConnectionTest(states: Map<String, PlaybackState>) {
-        val operation = connectionTestGate.active ?: return
-        val cameraId = operation.cameraId
-        val connectionState =
-            when (states[cameraId]) {
-                null,
-                PlaybackState.Idle -> null
-                PlaybackState.Connecting,
-                is PlaybackState.Retrying -> ConnectionTestUiState.Testing
-                PlaybackState.Live -> ConnectionTestUiState.Connected
-                PlaybackState.AuthenticationFailed -> ConnectionTestUiState.AuthenticationFailed
-                PlaybackState.Offline -> ConnectionTestUiState.Offline
-                PlaybackState.UnsupportedStream,
-                PlaybackState.DecoderResourceExhausted,
-                is PlaybackState.PlaybackFailed -> ConnectionTestUiState.Failed
+        val operation = connectionTestGate.active
+        if (operation != null) {
+            val decision = ConnectionTestPlaybackPolicy.duringTest(states[operation.cameraId])
+            val connectionState = decision.connectionState ?: return
+            connectionStates = connectionStates + (operation.cameraId to connectionState)
+            if (decision.action == ConnectionTestPlaybackAction.ContinueTesting) return
+            if (!connectionTestGate.finish(operation)) return
+
+            connectionTestJob?.cancel()
+            connectionTestJob = null
+            when (decision.action) {
+                ConnectionTestPlaybackAction.ContinueTesting -> Unit
+                ConnectionTestPlaybackAction.HoldPreview -> scheduleConnectionPreviewRelease()
+                ConnectionTestPlaybackAction.ReleasePreview -> stopConnectionPreviewIfActive()
             }
-        if (connectionState != null) {
-            connectionStates = connectionStates + (cameraId to connectionState)
-            if (
-                connectionState != ConnectionTestUiState.Testing &&
-                    connectionTestGate.finish(operation)
-            ) {
-                connectionTestJob?.cancel()
-                connectionTestJob = null
-                playbackCoordinator.leaveScreen()
-            }
+            return
         }
+
+        val preview = connectionTestPreviewGate.active ?: return
+        val decision =
+            ConnectionTestPlaybackPolicy.whileHoldingPreview(states[preview.cameraId]) ?: return
+        val previewFailure = decision.connectionState ?: return
+        connectionStates = connectionStates + (preview.cameraId to previewFailure)
+        stopConnectionPreviewIfActive()
     }
 
     private fun completeConnectionTest(
@@ -726,8 +849,31 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
         if (!connectionTestGate.finish(operation)) return
         connectionStates = connectionStates + (operation.cameraId to state)
         connectionTestJob = null
+        stopConnectionPreviewIfActive()
         playbackCoordinator.leaveScreen()
         publish()
+    }
+
+    private fun scheduleConnectionPreviewRelease() {
+        val preview = connectionTestPreviewGate.active ?: return
+        connectionPreviewReleaseJob?.cancel()
+        connectionPreviewReleaseJob = viewModelScope.launch {
+            delay(CONNECTION_PREVIEW_HOLD_MILLIS)
+            if (!connectionTestPreviewGate.finish(preview)) return@launch
+            connectionPreviewReleaseJob = null
+            playbackCoordinator.leaveScreen()
+            playbackStates = emptyMap()
+            publish()
+        }
+    }
+
+    private fun stopConnectionPreviewIfActive() {
+        if (connectionTestPreviewGate.active == null && connectionPreviewReleaseJob == null) return
+        connectionTestPreviewGate.cancelActive()
+        connectionPreviewReleaseJob?.cancel()
+        connectionPreviewReleaseJob = null
+        playbackCoordinator.leaveScreen()
+        playbackStates = emptyMap()
     }
 
     private fun maybeStartSavedCameraBootstrap() {
@@ -810,7 +956,11 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
     private fun refreshActivePlaybackPlan(latest: CameraConfiguration) {
         val expectedRoute = route
         val expectedGeneration = routeOperationGeneration
-        if (expectedRoute !is CamGridRoute.Wall && expectedRoute !is CamGridRoute.Fullscreen) {
+        if (
+            !foreground ||
+                permission != LocalNetworkPermissionUiState.Granted ||
+                (expectedRoute !is CamGridRoute.Wall && expectedRoute !is CamGridRoute.Fullscreen)
+        ) {
             return
         }
 
@@ -853,7 +1003,10 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     private fun openWall() {
+        if (!allowsRouteAction(LocalRouteSurface.CameraSetup)) return
+        if (connectionTestGate.active != null) return
         if (!canOpenWall(requireSuccessfulTest = true)) return
+        stopConnectionPreviewIfActive()
         val expectedRoute = route
         val operationGeneration = supersedeRouteOperations()
         routeJob = viewModelScope.launch {
@@ -899,6 +1052,7 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     private fun openFullscreen(cameraId: String) {
+        if (!allowsRouteAction(LocalRouteSurface.Wall)) return
         val expectedRoute = route
         val operationGeneration = supersedeRouteOperations()
         routeJob = viewModelScope.launch {
@@ -930,6 +1084,7 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     private fun restoreWall() {
+        if (!allowsRouteAction(LocalRouteSurface.Fullscreen)) return
         val cameraId = (route as? CamGridRoute.Fullscreen)?.cameraId ?: return
         val expectedRoute = route
         val operationGeneration = supersedeRouteOperations()
@@ -1020,9 +1175,19 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
 
     private fun stopPlaybackAndTransientWork() {
         supersedeRouteOperations()
-        connectionTestGate.cancelActive()
+        val testingOperation = connectionTestGate.cancelActive()
+        if (
+            testingOperation != null &&
+                connectionStates[testingOperation.cameraId] == ConnectionTestUiState.Testing
+        ) {
+            connectionStates =
+                connectionStates + (testingOperation.cameraId to ConnectionTestUiState.NotTested)
+        }
         connectionTestJob?.cancel()
         connectionTestJob = null
+        connectionTestPreviewGate.cancelActive()
+        connectionPreviewReleaseJob?.cancel()
+        connectionPreviewReleaseJob = null
         playbackCoordinator.leaveScreen()
         playbackStates = emptyMap()
         setupDraft = setupDraft.copy(username = "", password = "", submitting = false)
@@ -1043,22 +1208,42 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
     ): Boolean =
         generation == routeOperationGeneration &&
             route == expectedRoute &&
+            foreground &&
+            permission == LocalNetworkPermissionUiState.Granted &&
             credentialRecovery == CredentialRecoveryUiState.NotRequired
 
-    private fun permissionState(
+    private fun allowsRouteAction(expectedSurface: LocalRouteSurface): Boolean =
+        LocalRouteActionPolicy.allows(
+            foreground = foreground,
+            permissionUiState = permission,
+            currentRoute = route,
+            expectedSurface = expectedSurface,
+        )
+
+    private fun permissionDecision(
         shouldShowRationale: Boolean,
         requestCompleted: Boolean,
-    ): LocalNetworkPermissionUiState =
-        when (val state = container.permissionCoordinator.state(shouldShowRationale)) {
-            LocalNetworkPermissionState.Granted,
-            LocalNetworkPermissionState.NotRequired -> LocalNetworkPermissionUiState.Granted
-            is LocalNetworkPermissionState.Denied ->
-                if (state.shouldShowRationale || !requestCompleted) {
-                    LocalNetworkPermissionUiState.RationaleRequired
-                } else {
-                    LocalNetworkPermissionUiState.Denied
-                }
+    ): LocalNetworkAccessDecision =
+        LocalNetworkAccessPolicy.decide(
+            permissionState = container.permissionCoordinator.state(shouldShowRationale),
+            requestCompleted = requestCompleted,
+            currentRoute = route,
+        )
+
+    private fun applyPermissionDecision(decision: LocalNetworkAccessDecision) {
+        permission = decision.permissionUiState
+        if (decision.stopLocalWork) {
+            savedCameraBootstrapGate.cancelActive()
+            discoveryJob?.cancel()
+            discoveryJob = null
+            discoveryFinalizationJob?.cancel()
+            discoveryFinalizationJob = null
+            stopPlaybackAndTransientWork()
+            connectionStates = emptyMap()
+            discoveryContent = DiscoveryContentUiState.Ready
+            route = decision.route
         }
+    }
 
     private fun canOpenWall(
         selected: List<CameraDevice> = configuration.selectedCameras(),
@@ -1120,6 +1305,9 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
                     credentialRecovery = credentialRecovery,
                     canStartWatching = canOpenWall(selected, requireSuccessfulTest = true),
                     submitting = setupDraft.submitting,
+                    selectionUpdateCameraId = selectionUpdateCameraId,
+                    sharedProfileUpdateInProgress = sharedProfileUpdateGate.active != null,
+                    connectionPreviewCameraId = connectionTestPreviewGate.active?.cameraId,
                 ),
             wall = wall,
             fullscreen =
@@ -1241,6 +1429,7 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
     private companion object {
         const val SHARED_PROFILE_ID = "shared-camera-account"
         const val CONNECTION_TEST_TIMEOUT_MILLIS = 25_000L
+        const val CONNECTION_PREVIEW_HOLD_MILLIS = 5_000L
     }
 }
 

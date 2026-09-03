@@ -47,7 +47,15 @@ fun CameraWallScreen(
                     camera.playbackState is PlaybackState.PlaybackFailed
             }
         Box(modifier = Modifier.fillMaxSize()) {
-            CameraGrid(gridLayout = grid, modifier = Modifier.fillMaxSize()) {
+            CameraGrid(
+                gridLayout = grid,
+                modifier =
+                    Modifier.fillMaxSize()
+                        .padding(
+                            horizontal = WALL_GRID_SAFE_HORIZONTAL_PADDING,
+                            vertical = WALL_GRID_SAFE_VERTICAL_PADDING,
+                        ),
+            ) {
                 state.cameras.forEach { camera ->
                     CameraWallTile(
                         camera = camera,
@@ -65,7 +73,10 @@ fun CameraWallScreen(
                     onClick = { onAction(CameraWallUiAction.RescanCameras) },
                     modifier =
                         Modifier.align(Alignment.BottomEnd)
-                            .padding(18.dp)
+                            .padding(
+                                horizontal = RESCAN_SAFE_HORIZONTAL_PADDING,
+                                vertical = RESCAN_SAFE_VERTICAL_PADDING,
+                            )
                             .testTag(UiTestTags.WallRescanAction),
                 ) {
                     Text(stringResource(R.string.scan_again))
@@ -74,6 +85,19 @@ fun CameraWallScreen(
         }
     }
 }
+
+private val TV_SAFE_HORIZONTAL_PADDING = 48.dp
+private val TV_SAFE_VERTICAL_PADDING = 27.dp
+
+// TV Material buttons scale to 1.1 while focused. The extra inset keeps the scaled button and
+// focus treatment inside the 48 dp / 27 dp title-safe boundary.
+private val RESCAN_SAFE_HORIZONTAL_PADDING = 56.dp
+private val RESCAN_SAFE_VERTICAL_PADDING = 32.dp
+
+// Each tile already has a 6 dp gutter. Subtract it here so the outer focus border lands exactly
+// inside the TV overscan-safe area while preserving as much camera-wall space as possible.
+private val WALL_GRID_SAFE_HORIZONTAL_PADDING = TV_SAFE_HORIZONTAL_PADDING - 6.dp
+private val WALL_GRID_SAFE_VERTICAL_PADDING = TV_SAFE_VERTICAL_PADDING - 6.dp
 
 @Composable
 private fun CameraWallTile(

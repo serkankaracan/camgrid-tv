@@ -47,11 +47,10 @@ class DiscoveryDeduplicator {
         }
 
         val firstAddresses =
-            first.xAddrs.mapNotNull(DiscoveryAddressNormalizer::xAddr).mapTo(mutableSetOf()) {
-                it.value
-            }
+            DiscoveryAddressNormalizer.xAddrsForHost(first.xAddrs, first.host)
+                .mapTo(mutableSetOf(), NormalizedXAddr::value)
         if (
-            second.xAddrs.mapNotNull(DiscoveryAddressNormalizer::xAddr).any {
+            DiscoveryAddressNormalizer.xAddrsForHost(second.xAddrs, second.host).any {
                 it.value in firstAddresses
             }
         ) {
@@ -73,7 +72,9 @@ class DiscoveryDeduplicator {
             endpointUuid = newest.endpointUuid ?: oldest.endpointUuid,
             xAddrs =
                 (newest.xAddrs + oldest.xAddrs)
-                    .mapNotNull(DiscoveryAddressNormalizer::xAddr)
+                    .mapNotNull {
+                        DiscoveryAddressNormalizer.xAddrForHost(it, newest.host)
+                    }
                     .distinctBy(NormalizedXAddr::value)
                     .map(NormalizedXAddr::value),
             scopes = (newest.scopes + oldest.scopes).distinct(),

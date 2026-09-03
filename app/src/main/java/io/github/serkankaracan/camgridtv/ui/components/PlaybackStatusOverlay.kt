@@ -40,10 +40,11 @@ fun ConnectionStatusLabel(
     labelRes: Int,
     isError: Boolean,
     modifier: Modifier = Modifier,
+    testTag: String = UiTestTags.connectionStatus(cameraId),
 ) {
     Text(
         text = stringResource(labelRes),
-        modifier = modifier.testTag(UiTestTags.connectionStatus(cameraId)),
+        modifier = modifier.testTag(testTag),
         color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
         fontSize = 16.sp,
     )

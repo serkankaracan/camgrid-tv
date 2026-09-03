@@ -1,10 +1,13 @@
 package io.github.serkankaracan.camgridtv.discovery
 
+import io.github.serkankaracan.camgridtv.security.LocalAddressPolicy
 import java.net.URI
 import java.util.Locale
 import java.util.UUID
 
 internal object DiscoveryAddressNormalizer {
+    private val localAddressPolicy = LocalAddressPolicy()
+
     fun endpoint(value: String?): String? {
         val candidate = value?.trim()?.takeIf(String::isNotEmpty) ?: return null
         if (candidate.length > 512) return null
@@ -39,6 +42,20 @@ internal object DiscoveryAddressNormalizer {
                 }
                 .getOrNull() ?: return null
         return NormalizedXAddr(normalizedUri, host, port)
+    }
+
+    fun xAddrForHost(value: String?, host: String): NormalizedXAddr? =
+        xAddr(value)?.takeIf { sameLiteralAddress(it.host, host) }
+
+    fun xAddrsForHost(values: Iterable<String>, host: String): List<NormalizedXAddr> =
+        values.mapNotNull {
+            xAddrForHost(it, host)
+        }
+
+    fun sameLiteralAddress(first: String, second: String): Boolean {
+        val firstAddress = localAddressPolicy.parseLiteral(first)?.address ?: return false
+        val secondAddress = localAddressPolicy.parseLiteral(second)?.address ?: return false
+        return firstAddress.contentEquals(secondAddress)
     }
 }
 

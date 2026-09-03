@@ -29,22 +29,33 @@ All notable changes follow Keep a Changelog principles.
 - App backup is disabled and secret/signing/build artifacts are excluded from
   Git.
 
+### Fixed
+
+- Pin ONVIF service addresses to the literal UDP response source so a mismatched
+  `XAddr` cannot redirect local requests to another host.
+- Stop discovery and playback immediately when API 37 local-network permission
+  is revoked, while preserving the correct rationale/settings state on resume.
+- Map Media3 unsupported-format and reclaimed-decoder errors to actionable,
+  non-retrying UI states.
+- Keep the tested `/stream2` visible briefly in setup, retain D-pad focus during
+  the test, and keep TV overlays within the overscan-safe area.
+
 ### Verification
 
-- Standard local quality gate passed on Windows 11 with JDK 17 and a project-local
-  API 37 command-line SDK.
-- 116 JVM tests passed with no failures, errors or skips.
-- Debug and instrumented-test APKs compiled successfully; instrumented tests were
-  not executed because no emulator or adb device was available.
-- Secret scan passed for 147 files and `git diff --check` passed.
-- Debug APK size: 17,754,065 bytes; SHA-256:
-  `033AFA27F691852D11E56BF86C8FF8B4082AE8BF44E47DA097BE7C6A1CCCC0E2`.
+- The current Windows/PowerShell quality gate covers debug and release lint, JVM
+  tests, debug APK assembly, debug instrumented-test APK assembly, minified
+  release assembly, secret hygiene and whitespace.
+- Final candidate counts, artifact digest and CI run are recorded only after the
+  integrated build; earlier snapshot evidence is isolated as historical in
+  `docs/TEST_REPORT.md`.
+- Instrumented-test compilation is not device execution. Physical Mi Stick
+  execution remains blocked until a device is available.
 
 ### Known limitations
 
 - Physical C500/C510W discovery and playback are not yet run.
-- Mi Stick D-pad, 15-minute dual-stream stability, lifecycle, Wi-Fi recovery,
-  wrong-password, logcat and decoder/memory acceptance scenarios remain blocked
-  until hardware is available.
+- Mi Stick D-pad, 15-minute dual-stream stability, lifecycle, API 37 permission
+  revocation, Wi-Fi recovery, wrong-password, logcat and decoder/memory
+  acceptance scenarios remain blocked until hardware is available.
 - No release tag or GitHub Release is published while physical acceptance remains
   blocked; this version stays marked as Unreleased.

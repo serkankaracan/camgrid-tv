@@ -15,6 +15,9 @@ object UiTestTags {
     const val ClearStoredCredentialsAction = "clear_stored_credentials_action"
     const val SharedProfileToggle = "shared_profile_toggle"
     const val StartWatchingAction = "start_watching_action"
+    const val SetupCameraList = "setup_camera_list"
+    const val SetupConnectionPreview = "setup_connection_preview"
+    const val SetupConnectionPreviewStatus = "setup_connection_preview_status"
     const val WallScreen = "wall_screen"
     const val WallRescanAction = "wall_rescan_action"
     const val FullscreenScreen = "fullscreen_screen"
@@ -28,6 +31,8 @@ object UiTestTags {
     fun testConnection(cameraId: String): String = "test_connection_${safeId(cameraId)}"
 
     fun connectionStatus(cameraId: String): String = "connection_status_${safeId(cameraId)}"
+
+    fun connectionPreview(cameraId: String): String = "connection_preview_${safeId(cameraId)}"
 
     fun wallCamera(cameraId: String): String = "wall_camera_${safeId(cameraId)}"
 

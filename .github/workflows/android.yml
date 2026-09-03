@@ -12,6 +12,7 @@ permissions:
 
 jobs:
   quality:
+    # Keep this name stable: main branch protection requires this exact context.
     name: Lint, test, and debug APK
     runs-on: windows-latest
     timeout-minutes: 45
@@ -40,7 +41,7 @@ jobs:
 
       - name: Run quality gate
         shell: pwsh
-        run: .\gradlew.bat --no-daemon spotlessCheck lintDebug testDebugUnitTest assembleDebug
+        run: .\gradlew.bat --no-daemon spotlessCheck lintDebug lintRelease testDebugUnitTest assembleDebug assembleDebugAndroidTest assembleRelease
 
       - name: Check repository secret hygiene
         shell: pwsh

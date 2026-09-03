@@ -8,10 +8,17 @@ import java.security.MessageDigest
 import java.util.Locale
 
 class DiscoveredOnvifDeviceFactory(
-    private val localAddressPolicy: LocalAddressPolicy = LocalAddressPolicy()
+    private val genericCameraNameProvider: () -> String,
+    private val localAddressPolicy: LocalAddressPolicy = LocalAddressPolicy(),
 ) {
+    constructor(
+        genericCameraName: String,
+        localAddressPolicy: LocalAddressPolicy = LocalAddressPolicy(),
+    ) : this({ genericCameraName }, localAddressPolicy)
+
     fun create(match: ProbeMatch, nowEpochMillis: Long): DiscoveredOnvifDevice? {
         require(nowEpochMillis >= 0L) { "Discovery time is invalid" }
+        val genericCameraName = currentGenericCameraName()
         val sourceHost = match.sourceHost.trim().removeSurrounding("[", "]")
         if (!localAddressPolicy.isPotentiallyLocalLiteral(sourceHost)) return null
 
@@ -20,19 +27,18 @@ class DiscoveredOnvifDeviceFactory(
                 .asSequence()
                 .mapNotNull(DiscoveryAddressNormalizer::xAddr)
                 .filter { localAddressPolicy.isPotentiallyLocalLiteral(it.host) }
+                .filter { DiscoveryAddressNormalizer.sameLiteralAddress(it.host, sourceHost) }
                 .distinctBy(NormalizedXAddr::value)
                 .toList()
-        val preferredAddress =
-            xAddrs.firstOrNull { it.host.equals(sourceHost, ignoreCase = true) }
-                ?: xAddrs.firstOrNull()
-        val host = preferredAddress?.host ?: sourceHost
+        val preferredAddress = xAddrs.firstOrNull()
+        val host = sourceHost
         val onvifPort = preferredAddress?.port ?: CameraDevice.DEFAULT_ONVIF_PORT
         val endpointUuid = DiscoveryAddressNormalizer.endpoint(match.endpointAddress)
         val scopeMetadata = extractScopeMetadata(match.scopes)
         val discoveredName =
             scopeMetadata.name
                 ?: scopeMetadata.model
-                ?: "ONVIF camera · ${sanitizeForDisplay(host, 64)}"
+                ?: "$genericCameraName · ${sanitizeForDisplay(host, 64, genericCameraName)}"
         val identitySeed =
             endpointUuid ?: preferredAddress?.value ?: "${host.lowercase(Locale.ROOT)}:$onvifPort"
         return DiscoveredOnvifDevice(
@@ -44,9 +50,16 @@ class DiscoveredOnvifDeviceFactory(
             host = host,
             onvifPort = onvifPort,
             discoveredName =
-                sanitizeForDisplay(discoveredName, CameraDevice.MAX_DISPLAY_NAME_LENGTH),
-            manufacturer = scopeMetadata.manufacturer?.let { sanitizeForDisplay(it, 120) },
-            model = scopeMetadata.model?.let { sanitizeForDisplay(it, 120) },
+                sanitizeForDisplay(
+                    discoveredName,
+                    CameraDevice.MAX_DISPLAY_NAME_LENGTH,
+                    genericCameraName,
+                ),
+            manufacturer =
+                scopeMetadata.manufacturer?.let {
+                    sanitizeForDisplay(it, 120, genericCameraName)
+                },
+            model = scopeMetadata.model?.let { sanitizeForDisplay(it, 120, genericCameraName) },
             lastSeenEpochMillis = nowEpochMillis,
         )
     }
@@ -91,9 +104,18 @@ class DiscoveredOnvifDeviceFactory(
             ?.takeIf(String::isNotBlank)
     }
 
-    private fun sanitizeForDisplay(value: String, maximum: Int): String =
+    private fun currentGenericCameraName(): String =
+        genericCameraNameProvider().trim().take(CameraDevice.MAX_DISPLAY_NAME_LENGTH).also {
+            require(it.isNotEmpty()) { "Generic camera name must not be blank" }
+        }
+
+    private fun sanitizeForDisplay(
+        value: String,
+        maximum: Int,
+        fallback: String,
+    ): String =
         sanitizeForStorage(value, maximum).replace(WHITESPACE, " ").trim().ifBlank {
-            "ONVIF camera"
+            fallback
         }
 
     private fun sanitizeForStorage(value: String, maximum: Int): String =
