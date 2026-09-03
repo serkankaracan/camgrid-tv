@@ -7,6 +7,19 @@ $repositoryRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Pat
 Push-Location -LiteralPath $repositoryRoot
 
 try {
+    function ConvertTo-RepositoryRelativePath {
+        param([Parameter(Mandatory = $true)][string]$Path)
+
+        $fullPath = [System.IO.Path]::GetFullPath($Path)
+        $rootPrefix = $repositoryRoot.TrimEnd([System.IO.Path]::DirectorySeparatorChar) +
+            [System.IO.Path]::DirectorySeparatorChar
+        if (-not $fullPath.StartsWith($rootPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "Scan result is outside the repository root."
+        }
+
+        return $fullPath.Substring($rootPrefix.Length).Replace('\', '/')
+    }
+
     $candidateFiles = @(
         git ls-files --cached --others --exclude-standard |
             Where-Object { $_ -and (Test-Path -LiteralPath $_ -PathType Leaf) }
@@ -37,13 +50,12 @@ try {
 
     foreach ($entry in $textPatterns.GetEnumerator()) {
         $matchingFiles = @(
-            $candidateFiles |
-                Select-String -Pattern $entry.Value -List -ErrorAction SilentlyContinue |
+            Select-String -LiteralPath $candidateFiles -Pattern $entry.Value -List -ErrorAction SilentlyContinue |
                 ForEach-Object { $_.Path } |
                 Sort-Object -Unique
         )
         foreach ($matchingFile in $matchingFiles) {
-            $relativeMatch = [System.IO.Path]::GetRelativePath($repositoryRoot, $matchingFile)
+            $relativeMatch = ConvertTo-RepositoryRelativePath -Path $matchingFile
             $problems.Add("$($entry.Key): $relativeMatch")
         }
     }
@@ -55,13 +67,12 @@ try {
     )
     foreach ($token in $localForbiddenTokens) {
         $matchingFiles = @(
-            $candidateFiles |
-                Select-String -SimpleMatch -Pattern $token -List -ErrorAction SilentlyContinue |
+            Select-String -LiteralPath $candidateFiles -SimpleMatch -Pattern $token -List -ErrorAction SilentlyContinue |
                 ForEach-Object { $_.Path } |
                 Sort-Object -Unique
         )
         foreach ($matchingFile in $matchingFiles) {
-            $relativeMatch = [System.IO.Path]::GetRelativePath($repositoryRoot, $matchingFile)
+            $relativeMatch = ConvertTo-RepositoryRelativePath -Path $matchingFile
             $problems.Add("local forbidden token: $relativeMatch")
         }
     }

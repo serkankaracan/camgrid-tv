@@ -1,0 +1,55 @@
+name: Android quality gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Lint, test, and debug APK
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Temurin JDK 17
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up and validate Gradle wrapper
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+        with:
+          cache-provider: basic
+
+      - name: Install stable Android SDK packages
+        shell: pwsh
+        run: |
+          $sdkManager = Join-Path $env:ANDROID_HOME "cmdline-tools\latest\bin\sdkmanager.bat"
+          1..20 | ForEach-Object { "y" } | & $sdkManager --licenses | Out-Null
+          & $sdkManager "platform-tools" "platforms;android-37.0" "build-tools;36.0.0"
+
+      - name: Run quality gate
+        shell: pwsh
+        run: .\gradlew.bat --no-daemon spotlessCheck lintDebug testDebugUnitTest assembleDebug
+
+      - name: Check repository secret hygiene
+        shell: pwsh
+        run: .\scripts\check-no-secrets.ps1
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: camgrid-tv-debug-${{ github.sha }}
+          path: app\build\outputs\apk\debug\app-debug.apk
+          if-no-files-found: error
+          retention-days: 14

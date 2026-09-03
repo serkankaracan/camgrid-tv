@@ -1,10 +1,13 @@
 # Android and Gradle
 .gradle/
+.gradle-user-home/
+.android-user-home/
 build/
 **/build/
 captures/
 .cxx/
 .externalNativeBuild/
+.android-sdk/
 
 # Local SDK and test configuration
 local.properties
