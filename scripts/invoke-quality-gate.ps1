@@ -45,4 +45,4 @@ finally {
     Pop-Location
 }
 
-Write-Output 'CamGrid TV quality gate passed.'
+Write-Output 'KARACAM quality gate passed.'

@@ -1,16 +1,17 @@
-# CamGrid TV agent contract
+# KARACAM agent contract
 
 Read `docs/IMPLEMENTATION_STATUS.md` before making changes.
 
 ## Invariants
 
-- Product: CamGrid TV; package/application ID:
+- Product: KARACAM; package/application ID:
   `io.github.serkankaracan.camgridtv`; version `0.1.0-alpha.1` (`versionCode` 1).
 - One Android `app` module, Kotlin, Compose for TV, Media3 RTSP, coroutines/Flow,
   ViewModel state and a small manual dependency container. Do not add Hilt.
 - The app is Android TV-only, landscape and fully usable with D-pad/OK/Back.
-- Discovery uses ONVIF WS-Discovery. Grid uses `/stream2`; fullscreen uses
-  `/stream1`; audio is disabled. Do not hard-code a model, camera count or real IP.
+- Discovery uses ONVIF WS-Discovery. Grid uses `/stream2`; fullscreen first uses
+  `/stream1` with a one-way `/stream2` compatibility fallback; audio is disabled.
+  Do not hard-code a model, camera count or real IP.
 - Runtime communication is local-only. No backend, cloud login, analytics,
   crash reporting, recording, PTZ, audio, notifications, boot receiver, mobile UI,
   web UI, reverse engineering or private vendor API.

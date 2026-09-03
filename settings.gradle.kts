@@ -14,6 +14,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "camgrid-tv"
+rootProject.name = "KARACAM"
 
 include(":app")

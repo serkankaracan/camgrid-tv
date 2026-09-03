@@ -1,6 +1,6 @@
 # Third-party notices
 
-CamGrid TV contains no vendor camera SDK, proprietary Tapo API, libVLC or FFmpeg.
+KARACAM contains no vendor camera SDK, proprietary Tapo API, libVLC or FFmpeg.
 Dependency versions are pinned in `gradle/libs.versions.toml`, the root
 `build.gradle.kts` Spotless configuration and `gradle-wrapper.properties`.
 

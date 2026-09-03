@@ -1,6 +1,6 @@
 # Privacy
 
-CamGrid TV is local-only. Camera discovery packets, settings, credentials and video
+KARACAM is local-only. Camera discovery packets, settings, credentials and video
 stay between the Android TV device and cameras on the trusted LAN. The application
 contains no backend, advertising, analytics, crash reporting or telemetry SDK.
 

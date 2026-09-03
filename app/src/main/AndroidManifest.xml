@@ -21,7 +21,7 @@
     <application
         android:name=".app.CamGridApplication"
         android:allowBackup="false"
-        android:banner="@drawable/camgrid_tv_banner"
+        android:banner="@drawable/karacam_banner"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"

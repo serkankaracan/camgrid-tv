@@ -1,11 +1,11 @@
-# CamGrid TV
+# KARACAM
 
-CamGrid TV, aynı güvenilir yerel ağdaki ONVIF/RTSP kameraları otomatik bulan ve
+KARACAM, aynı güvenilir yerel ağdaki ONVIF/RTSP kameraları otomatik bulan ve
 seçilen canlı yayınları Android TV / Google TV üzerinde tek bir dinamik ızgarada
 gösteren yerel-öncelikli bir uygulamadır. Backend, bulut hesabı, telemetri ve
 uzaktan erişim kullanmaz.
 
-> CamGrid TV bağımsız ve resmî olmayan bir açık kaynak projesidir. TP-Link veya
+> KARACAM bağımsız ve resmî olmayan bir açık kaynak projesidir. TP-Link veya
 > Tapo tarafından geliştirilmez, desteklenmez ya da onaylanmaz. Üründe bu
 > markalara ait logo veya görsel varlık kullanılmaz.
 
@@ -17,10 +17,11 @@ iddiası anlamına gelmez.
 
 ```text
 Android TV                  Güvenilir yerel ağ                 Kameralar
-CamGrid TV  -- WS-Discovery 239.255.255.250:3702 -->  ONVIF endpoint'leri
+KARACAM     -- WS-Discovery 239.255.255.250:3702 -->  ONVIF endpoint'leri
             <-- ProbeMatch / UUID / XAddr ----------
             -- RTSP/TCP :554 /stream2 ------------->  Grid (düşük kalite)
             -- RTSP/TCP :554 /stream1 ------------->  Tam ekran (yüksek kalite)
+            -- /stream1 oynatılamazsa /stream2 ---->  Tam ekran uyumluluk modu
 ```
 
 Uygulama açılışta ONVIF WS-Discovery taraması yapar, tekrar gelen cevapları endpoint
@@ -39,7 +40,12 @@ sığdırır; üst çubuk canlı yayın sayısını gösterir. Çevrimdışı, y
 veya oynatılamayan yayın olduğunda üst çubuktaki **Kameraları yeniden tara**
 eylemi keşfe dönüp yeni tarama başlatır. D-pad odağı kutucuklar arasında taşır;
 OK odaktaki kamerayı tam ekran açar, Back önceki ızgara odağını geri yükler.
-Görüntüler kırpılmaz (`FIT`/letterbox). Ses renderer'ı kapalıdır.
+Tam ekran önce `/stream1` yüksek kaliteli yayını dener. İlk oynatma denemesi
+başarısız olursa (kimlik doğrulama veya yerel ağ yokluğu hariç) aynı oturumda
+bir kez `/stream2` yayınına geçer. Sonraki tam ekran girişinde
+yüksek kalite yeniden denenir.
+Media3'ün Compose video yüzeyi kaynak görüntü oranını korur; farklı TV oranlarında
+görüntüyü esnetmek yerine letterbox/pillarbox uygular. Ses renderer'ı kapalıdır.
 
 ## Gizlilik ve güvenlik
 
@@ -51,7 +57,7 @@ Görüntüler kırpılmaz (`FIT`/letterbox). Ses renderer'ı kapalıdır.
 - Android backup kapalıdır. Credential içeren URI'lerin normal metin gösterimi
   redacted'dır; ham URI yalnız Media3 sınırında açılır.
 - RTSP şifrelenmemiş olabilir. Uygulamayı yalnız güvenilir, şifreli ev LAN/Wi-Fi
-  ağında kullanın. 554 veya 2020 portlarını internete açmayın. CamGrid TV uzaktan
+  ağında kullanın. 554 veya 2020 portlarını internete açmayın. KARACAM uzaktan
   erişim, port yönlendirme veya VPN kurulumu sağlamaz.
 - Android 17/API 37+ üzerinde yerel ağ izni, herhangi bir discovery/RTSP soketi
   açılmadan istenir. Eski sürümlerde platformun uyumluluk davranışı kullanılır.
@@ -67,7 +73,7 @@ Her kameranın mobil uygulamasında:
 1. Kameranın canlı görünümünü açın ve sağ üstten **Device Settings** ekranına gidin.
 2. **Advanced Settings > Camera Account** yolunu açın.
 3. Güçlü ve benzersiz bir kullanıcı adı/parola oluşturun.
-4. Bilgileri yalnız CamGrid TV'nin kendi güvenli formuna girin; sohbete, terminale
+4. Bilgileri yalnız KARACAM'ın kendi güvenli formuna girin; sohbete, terminale
    veya RTSP URL'sine yapıştırmayın.
 
 Üreticinin güncel adımları:
@@ -221,7 +227,7 @@ eşzamanlı oturum sınırı aksi halde yanıltıcı bağlantı/decoder hatası 
 | ONVIF servis portu | TCP 2020 |
 | RTSP servis portu | TCP 554 |
 | Grid | `/stream2` |
-| Tam ekran | `/stream1` |
+| Tam ekran | Önce `/stream1`; oynatma başarısızlığında otomatik `/stream2` |
 | RTP taşıması | RTSP üzerinden TCP'ye zorlanır |
 | Ses | Devre dışı |
 
@@ -248,9 +254,11 @@ Güncel kalite kapısı debug/release lint'i, JVM testlerini, debug ve küçült
 release APK'larını, ayrıca debug instrumented-test APK'sını kapsar. Son entegre
 koşunun sayıları, APK özeti ve CI sonucu ancak gerçekten çalıştırıldıktan sonra
 [docs/TEST_REPORT.md](docs/TEST_REPORT.md) içine yazılır; eski değerler yalnız
-tarihsel kanıt olarak etiketlenir. Fiziksel C500/C510W yayınları, Mi Stick
-instrumented testleri ve kabul senaryoları donanım erişimi olmadığı için
-**BLOCKED** durumundadır. Fake/emülatör testleri fiziksel kabul testi sayılmaz.
+tarihsel kanıt olarak etiketlenir. Önceki APK'nın kullanıcı testi iki eşzamanlı
+duvar yayınını doğruladı; C510W tam ekran ve görüntü oranı sorunlarını da ortaya
+çıkardı. Bu düzeltmeleri içeren güncel APK'nın fiziksel regresyonu ile ölçümlü adb
+kabul senaryoları henüz tamamlanmadı. Fake/emülatör testleri fiziksel kabul testi
+sayılmaz.
 
 ## Katkı ve lisans
 
@@ -260,11 +268,14 @@ Katkı kuralları [CONTRIBUTING.md](CONTRIBUTING.md), bağımlılık lisansları
 
 ## English summary
 
-CamGrid TV is a local-only Android TV viewer that discovers ONVIF cameras and
+KARACAM is a local-only Android TV viewer that discovers ONVIF cameras and
 shows selected RTSP streams in a remote-friendly dynamic grid. It stores camera
 credentials encrypted with an Android Keystore-backed AES/GCM key and contains no
-backend or telemetry. Grid streams use `/stream2`, fullscreen uses `/stream1`, and
-audio is disabled. Its remote-first fields stay in D-pad browse mode until OK
-opens editing, and setup uses one adaptive Verify → Watch action with a reachable
+backend or telemetry. Grid streams use `/stream2`; fullscreen first tries
+`/stream1` and falls back to `/stream2` when the first playback attempt fails,
+except for authentication or missing-local-network failures.
+Video preserves its source aspect ratio and audio is disabled. Its remote-first
+fields stay in D-pad browse mode until OK opens editing, and setup uses one
+adaptive Verify → Watch action with a reachable
 wall rescan when feeds fail. It is unofficial and is not affiliated with or
 endorsed by TP-Link/Tapo.

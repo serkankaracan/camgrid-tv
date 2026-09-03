@@ -4,7 +4,7 @@
 
 - TV ve kameranın aynı güvenilir ev LAN/Wi-Fi ağında olduğunu doğrulayın.
 - Misafir Wi-Fi, istemci/AP isolation ve multicast filtrelemesini kapatın.
-- Android 17 ve sonrasında CamGrid TV için Yerel Ağ iznini etkinleştirin.
+- Android 17 ve sonrasında KARACAM için Yerel Ağ iznini etkinleştirin.
 - Kamera uygulamasında ONVIF/RTSP desteğinin ve ayrı Kamera Hesabı'nın açık
   olduğundan emin olun; bulut hesabı veya Wi-Fi parolası kullanmayın.
 - WS-Discovery keşfi UDP multicast 3702 kullanır. Kameranın keşif sonucunda
@@ -26,12 +26,19 @@ Remove-Variable -Name cameraHost
 Kamera uygulamasında cihaz için oluşturduğunuz Kamera Hesabı kullanıcı adı ve
 parolasını uygulamanın güvenli formuna yeniden girin. Parolayı RTSP URL'sine,
 PowerShell komutuna, issue'ya veya loga yazmayın. Hesabı VLC'nin açtığı kimlik
-doğrulama penceresinde sınarsanız CamGrid TV testinden önce yayını durdurup VLC'yi
+doğrulama penceresinde sınarsanız KARACAM testinden önce yayını durdurup VLC'yi
 tamamen kapatın. Bazı kameralar eşzamanlı RTSP oturumlarını sınırlar.
 
 ## Görüntü yok veya sık kopuyor
 
-- Grid düşük kaliteli `/stream2`, tam ekran `/stream1` kullanır.
+- Grid düşük kaliteli `/stream2` kullanır. Tam ekran önce yüksek kaliteli
+  `/stream1` yayınını dener; ana yayın oynatma girişimi başarısız olursa aynı
+  kameranın `/stream2` yayınına otomatik geçer. Bir sonraki tam ekran girişinde
+  `/stream1` yeniden denenir.
+- Fallback sonrasında tam ekranın çözünürlüğü grid yayını kadar olabilir; bu,
+  sonsuz yeniden bağlanma yerine uyumlu canlı görüntüyü koruyan beklenen davranıştır.
+- Tam ekranda görüntü ekranı doldurmak için esnetilmez. Kamera ve TV oranı farklıysa
+  üst-alt veya sağ-sol siyah şerit görülmesi normaldir.
 - Uygulama güvenilirlik için RTP-over-TCP kullanır; RTSP yine de şifrelenmemiş
   olabilir. Yalnız güvenilir ve şifreli ev ağı kullanın.
 - Bir tile decoder hatası veriyorsa Android TV donanımının eşzamanlı H.264 decoder

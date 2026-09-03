@@ -10,6 +10,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.rtsp.RtspMediaSource
 import io.github.serkankaracan.camgridtv.util.LocalNetworkRouteResolver
@@ -28,10 +29,15 @@ class Media3PlaybackEngine(
     private val stateLock = Any()
     private val applicationHandler = Handler(Looper.getMainLooper())
 
-    /** PlayerView/Compose adapters must access this value on the main thread. */
+    /** Compose video-surface adapters must access this value on the main thread. */
     @get:MainThread
     val player: ExoPlayer =
-        ExoPlayer.Builder(context.applicationContext).setLooper(applicationHandler.looper).build()
+        ExoPlayer.Builder(
+                context.applicationContext,
+                DefaultRenderersFactory(context.applicationContext).setEnableDecoderFallback(true),
+            )
+            .setLooper(applicationHandler.looper)
+            .build()
 
     private var started = false
     private var released = false

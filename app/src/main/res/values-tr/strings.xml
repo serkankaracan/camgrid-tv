@@ -3,9 +3,9 @@
     <string name="text_field_browse_state">Gezinme modu. Düzenlemek için OK tuşuna basın.</string>
     <string name="text_field_editing_state">Düzenleniyor</string>
     <string name="text_field_edit_action">Metni düzenle</string>
-    <string name="app_name">CamGrid TV</string>
+    <string name="app_name">KARACAM</string>
     <string name="permission_title">Yerel ağ izni gerekli</string>
-    <string name="permission_body">CamGrid TV bu güvenilir ağdaki kameraları bulmak ve oynatmak için yerel ağ erişimine ihtiyaç duyar. Hiçbir veri cihazınızdan çıkmaz.</string>
+    <string name="permission_body">KARACAM bu güvenilir ağdaki kameraları bulmak ve oynatmak için yerel ağ erişimine ihtiyaç duyar. Hiçbir veri cihazınızdan çıkmaz.</string>
     <string name="permission_allow">Yerel ağa izin ver</string>
     <string name="permission_settings">Uygulama ayarlarını aç</string>
     <string name="scan_title">Kameraları bul</string>

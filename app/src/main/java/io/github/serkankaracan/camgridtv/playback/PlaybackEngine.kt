@@ -27,10 +27,19 @@ fun interface PlaybackEngineFactory {
 data class PlaybackRequest(
     val slotId: String,
     val uri: RtspUri,
+    val fallbackUri: RtspUri? = null,
 ) {
     init {
         require(slotId.isNotBlank() && slotId.length <= MAX_SLOT_ID_LENGTH) {
             "Playback slot identifier is invalid"
+        }
+        require(
+            fallbackUri == null ||
+                (uri.stream == RtspStream.PRIMARY &&
+                    fallbackUri.stream == RtspStream.SECONDARY &&
+                    uri.hostForNetworkBinding() == fallbackUri.hostForNetworkBinding())
+        ) {
+            "Playback fallback must be a secondary stream for the same camera"
         }
     }
 

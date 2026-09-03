@@ -14,7 +14,8 @@ All notable changes follow Keep a Changelog principles.
 - Shared and per-camera credential profiles backed by AES/GCM and Android
   Keystore abstractions.
 - Media3 RTSP playback coordination using `/stream2` for the wall and `/stream1`
-  for fullscreen, with audio disabled.
+  for fullscreen, with audio disabled and a per-camera `/stream2` compatibility
+  fallback when a primary stream cannot play.
 - Dynamic, centered camera wall layouts, fullscreen navigation and focus restore.
 - Connectivity monitoring, bounded retry/backoff, app lifecycle recovery and
   tile-local decoder error handling.
@@ -47,6 +48,13 @@ All notable changes follow Keep a Changelog principles.
   N cameras action, including deterministic failure-first targeting and focus
   restoration after asynchronous verification.
 - Keep conditional wall rescanning in a reachable, non-overlapping header action.
+- Stop primary fullscreen streams that fail playback from looping forever by
+  enabling decoder fallback and switching that session from `/stream1` to its
+  known-working `/stream2` stream.
+- Replace `PlayerView`/`AndroidView` interop with Media3's Compose-native fitted
+  video surface so non-16:9 displays preserve the camera's source aspect ratio.
+- Rename the Gradle project and user-visible product/launcher branding to KARACAM
+  while retaining the package and persistence identifiers for in-place updates.
 
 ### Verification
 
@@ -56,14 +64,17 @@ All notable changes follow Keep a Changelog principles.
 - Final candidate counts, artifact digest and CI run are recorded only after the
   integrated build; earlier snapshot evidence is isolated as historical in
   `docs/TEST_REPORT.md`.
-- Instrumented-test compilation is not device execution. Physical Mi Stick
-  execution remains blocked until a device is available.
+- Instrumented-test compilation is not device execution. Current automated
+  device execution remains blocked until one Mi Stick is connected over adb.
 
 ### Known limitations
 
-- Physical C500/C510W discovery and playback are not yet run.
-- Mi Stick D-pad, 15-minute dual-stream stability, lifecycle, API 37 permission
-  revocation, Wi-Fi recovery, wrong-password, logcat and decoder/memory
-  acceptance scenarios remain blocked until hardware is available.
+- A user-run pre-fix physical test confirmed two concurrent wall streams and
+  exposed a C510W `/stream1` fullscreen reconnect loop plus display-ratio
+  distortion. The corrected APK still requires a physical regression run.
+- Instrumented tests, API 37 permission revocation, measured logcat and
+  decoder/memory evidence require an adb-connected run. The 15-minute stability,
+  lifecycle, Wi-Fi recovery and wrong-password scenarios also remain pending on
+  the corrected APK.
 - No release tag or GitHub Release is published while physical acceptance remains
   blocked; this version stays marked as Unreleased.

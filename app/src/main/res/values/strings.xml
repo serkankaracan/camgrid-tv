@@ -3,9 +3,9 @@
     <string name="text_field_browse_state">Navigation mode. Press OK to edit.</string>
     <string name="text_field_editing_state">Editing</string>
     <string name="text_field_edit_action">Edit text</string>
-    <string name="app_name">CamGrid TV</string>
+    <string name="app_name">KARACAM</string>
     <string name="permission_title">Local network permission required</string>
-    <string name="permission_body">CamGrid TV needs local network access to discover and play cameras on this trusted network. No data leaves your device.</string>
+    <string name="permission_body">KARACAM needs local network access to discover and play cameras on this trusted network. No data leaves your device.</string>
     <string name="permission_allow">Allow local network</string>
     <string name="permission_settings">Open app settings</string>
     <string name="scan_title">Find cameras</string>

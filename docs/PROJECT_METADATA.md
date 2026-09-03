@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Product | CamGrid TV |
+| Product | KARACAM |
 | Repository | `camgrid-tv` |
 | Default branch | `main` |
 | Version | `0.1.0-alpha.1` |

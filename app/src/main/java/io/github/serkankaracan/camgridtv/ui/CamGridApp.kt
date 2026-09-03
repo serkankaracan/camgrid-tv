@@ -24,7 +24,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.serkankaracan.camgridtv.app.CamGridApplication
 import io.github.serkankaracan.camgridtv.playback.PlaybackState
-import io.github.serkankaracan.camgridtv.ui.components.Media3PlayerViewHost
+import io.github.serkankaracan.camgridtv.ui.components.Media3VideoSurface
 import io.github.serkankaracan.camgridtv.ui.components.UiTestTags
 import io.github.serkankaracan.camgridtv.ui.discovery.DiscoveryScreen
 import io.github.serkankaracan.camgridtv.ui.discovery.DiscoveryUiAction
@@ -51,6 +51,7 @@ fun CamGridApp(
     val activity = context.findActivity()
     val lifecycleOwner = LocalLifecycleOwner.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val playbackEngineGenerations = state.playbackEngineGenerations
     val permissionLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
             val rationale = activity?.let(viewModel::shouldShowPermissionRationale) ?: false
@@ -112,10 +113,11 @@ fun CamGridApp(
                     modifier = Modifier.fillMaxSize(),
                     videoSurface = { cameraId, surfaceModifier ->
                         val player = viewModel.connectionPreviewPlayerFor(cameraId)
-                        Media3PlayerViewHost(
+                        Media3VideoSurface(
                             player = player,
                             modifier = surfaceModifier,
                             keepScreenOn = false,
+                            surfaceKey = playbackEngineGenerations[cameraId],
                         )
                     },
                 )
@@ -126,7 +128,7 @@ fun CamGridApp(
                     modifier = Modifier.fillMaxSize(),
                     videoSurface = { cameraId, surfaceModifier ->
                         val player = viewModel.playerFor(cameraId)
-                        Media3PlayerViewHost(
+                        Media3VideoSurface(
                             player = player,
                             modifier = surfaceModifier,
                             keepScreenOn =
@@ -134,6 +136,7 @@ fun CamGridApp(
                                     camera.id == cameraId &&
                                         camera.playbackState == PlaybackState.Live
                                 },
+                            surfaceKey = playbackEngineGenerations[cameraId],
                         )
                     },
                 )
@@ -146,10 +149,11 @@ fun CamGridApp(
                         modifier = Modifier.fillMaxSize(),
                         videoSurface = { cameraId, surfaceModifier ->
                             val player = viewModel.playerFor(cameraId)
-                            Media3PlayerViewHost(
+                            Media3VideoSurface(
                                 player = player,
                                 modifier = surfaceModifier,
                                 keepScreenOn = fullscreen.playbackState == PlaybackState.Live,
+                                surfaceKey = playbackEngineGenerations[cameraId],
                             )
                         },
                     )

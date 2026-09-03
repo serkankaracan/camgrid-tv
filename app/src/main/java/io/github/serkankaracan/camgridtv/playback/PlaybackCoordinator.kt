@@ -29,7 +29,9 @@ class PlaybackCoordinator(
     private val active = mutableMapOf<String, ActivePlayback>()
     private val retryJobs = mutableMapOf<String, Job>()
     private val retryAttempts = mutableMapOf<String, Int>()
+    private val fallbackSlots = mutableSetOf<String>()
     private val mutableStates = MutableStateFlow<Map<String, PlaybackState>>(emptyMap())
+    private val mutableEngineGenerations = MutableStateFlow<Map<String, Long>>(emptyMap())
     private var desiredRequests = linkedMapOf<String, PlaybackRequest>()
     private var mode = PlaybackMode.NONE
     private var foreground = initiallyForeground
@@ -37,17 +39,25 @@ class PlaybackCoordinator(
     private var nextGeneration = 0L
 
     val states: StateFlow<Map<String, PlaybackState>> = mutableStates.asStateFlow()
+    val engineGenerations: StateFlow<Map<String, Long>> = mutableEngineGenerations.asStateFlow()
 
     fun showGrid(requests: List<PlaybackRequest>) {
-        require(requests.all { it.uri.stream == RtspStream.SECONDARY }) {
+        require(
+            requests.all {
+                it.uri.stream == RtspStream.SECONDARY && it.fallbackUri == null
+            }
+        ) {
             "Grid playback requires secondary streams"
         }
         setPlan(PlaybackMode.GRID, requests)
     }
 
     fun showFullscreen(request: PlaybackRequest) {
-        require(request.uri.stream == RtspStream.PRIMARY) {
-            "Fullscreen playback requires a primary stream"
+        require(
+            request.uri.stream == RtspStream.PRIMARY &&
+                request.fallbackUri?.stream == RtspStream.SECONDARY
+        ) {
+            "Fullscreen playback requires primary and secondary fallback streams"
         }
         setPlan(PlaybackMode.FULLSCREEN, listOf(request))
     }
@@ -58,6 +68,7 @@ class PlaybackCoordinator(
             releaseAllLocked()
             cancelAllRetriesLocked()
             retryAttempts.clear()
+            fallbackSlots.clear()
             desiredRequests.clear()
             mode = PlaybackMode.NONE
             mutableStates.value = emptyMap()
@@ -132,6 +143,7 @@ class PlaybackCoordinator(
                 releaseAllLocked()
                 cancelAllRetriesLocked()
                 retryAttempts.clear()
+                fallbackSlots.clear()
             } else {
                 val removedOrChanged =
                     desiredRequests.keys.filter { slotId ->
@@ -141,6 +153,7 @@ class PlaybackCoordinator(
                     releaseActiveLocked(slotId)
                     cancelRetryLocked(slotId)
                     retryAttempts.remove(slotId)
+                    fallbackSlots.remove(slotId)
                 }
             }
 
@@ -188,18 +201,29 @@ class PlaybackCoordinator(
                 return
             }
 
-        active[request.slotId] = ActivePlayback(request, engine, generation)
+        val activeUri =
+            if (request.slotId in fallbackSlots) {
+                checkNotNull(request.fallbackUri)
+            } else {
+                request.uri
+            }
+        active[request.slotId] = ActivePlayback(request, activeUri, engine, generation)
+        mutableEngineGenerations.value =
+            mutableEngineGenerations.value + (request.slotId to generation)
         setStateLocked(request.slotId, PlaybackEvent.StartRequested)
         try {
-            engine.start(request.uri) { event ->
+            engine.start(activeUri) { event ->
                 onEngineEvent(request.slotId, generation, event)
             }
         } catch (_: Throwable) {
             val current = active[request.slotId]
             if (current?.generation == generation) {
                 active.remove(request.slotId)
+                mutableEngineGenerations.value = mutableEngineGenerations.value - request.slotId
                 releaseSafely(engine)
-                handleFailureLocked(request, PlaybackFailureReason.FATAL)
+                if (!activateFallbackLocked(current, PlaybackFailureReason.FATAL)) {
+                    handleFailureLocked(request, PlaybackFailureReason.FATAL)
+                }
             }
         }
     }
@@ -222,11 +246,28 @@ class PlaybackCoordinator(
                 }
                 is PlaybackEngineEvent.Failed -> {
                     active.remove(slotId)
+                    mutableEngineGenerations.value = mutableEngineGenerations.value - slotId
                     releaseSafely(current.engine)
-                    handleFailureLocked(current.request, event.reason)
+                    if (!activateFallbackLocked(current, event.reason)) {
+                        handleFailureLocked(current.request, event.reason)
+                    }
                 }
             }
         }
+    }
+
+    private fun activateFallbackLocked(
+        failedPlayback: ActivePlayback,
+        reason: PlaybackFailureReason,
+    ): Boolean {
+        val request = failedPlayback.request
+        request.fallbackUri ?: return false
+        if (failedPlayback.uri != request.uri || !reason.allowsStreamFallback()) return false
+
+        fallbackSlots += request.slotId
+        retryAttempts.remove(request.slotId)
+        startLocked(request)
+        return true
     }
 
     private fun handleFailureLocked(
@@ -290,12 +331,18 @@ class PlaybackCoordinator(
     }
 
     private fun releaseActiveLocked(slotId: String) {
-        active.remove(slotId)?.engine?.let(::releaseSafely)
+        active.remove(slotId)?.engine?.let { engine ->
+            mutableEngineGenerations.value = mutableEngineGenerations.value - slotId
+            releaseSafely(engine)
+        }
     }
 
     private fun releaseAllLocked() {
         val engines = active.values.map(ActivePlayback::engine)
         active.clear()
+        if (mutableEngineGenerations.value.isNotEmpty()) {
+            mutableEngineGenerations.value = emptyMap()
+        }
         engines.forEach(::releaseSafely)
     }
 
@@ -333,6 +380,7 @@ class PlaybackCoordinator(
 
     private data class ActivePlayback(
         val request: PlaybackRequest,
+        val uri: RtspUri,
         val engine: PlaybackEngine,
         val generation: Long,
     )
@@ -343,3 +391,13 @@ class PlaybackCoordinator(
         FULLSCREEN,
     }
 }
+
+private fun PlaybackFailureReason.allowsStreamFallback(): Boolean =
+    when (this) {
+        PlaybackFailureReason.UNSUPPORTED_STREAM,
+        PlaybackFailureReason.DECODER_RESOURCE_EXHAUSTED,
+        PlaybackFailureReason.TRANSIENT,
+        PlaybackFailureReason.FATAL -> true
+        PlaybackFailureReason.AUTHENTICATION,
+        PlaybackFailureReason.NETWORK_UNAVAILABLE -> false
+    }

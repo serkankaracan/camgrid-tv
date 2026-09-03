@@ -5,18 +5,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.key
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.keepScreenOn
+import androidx.compose.ui.layout.ContentScale
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.ui.AspectRatioFrameLayout
-import androidx.media3.ui.PlayerView
+import androidx.media3.ui.compose.ContentFrame
+import androidx.media3.ui.compose.SURFACE_TYPE_SURFACE_VIEW
 
 typealias CameraVideoSurface = @Composable (cameraId: String, modifier: Modifier) -> Unit
 
@@ -28,32 +26,26 @@ fun EmptyCameraVideoSurface(modifier: Modifier = Modifier) {
 /** Hosts a Media3 player without accepting, displaying, or logging its source URI. */
 @OptIn(markerClass = [UnstableApi::class])
 @Composable
-fun Media3PlayerViewHost(
+fun Media3VideoSurface(
     player: Player?,
     modifier: Modifier = Modifier,
     keepScreenOn: Boolean = true,
+    surfaceKey: Long? = null,
 ) {
-    var playerView by remember { mutableStateOf<PlayerView?>(null) }
-
-    DisposableEffect(Unit) { onDispose { playerView?.player = null } }
-
-    AndroidView(
-        factory = { context ->
-            PlayerView(context).also { view ->
-                view.setEnableComposeSurfaceSyncWorkaround(true)
-                view.useController = false
-                view.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
-                view.isFocusable = false
-                view.isFocusableInTouchMode = false
-                view.keepScreenOn = keepScreenOn
-                view.player = player
-                playerView = view
-            }
-        },
-        update = { view ->
-            view.keepScreenOn = keepScreenOn
-            if (view.player !== player) view.player = player
-        },
-        modifier = modifier.fillMaxSize(),
-    )
+    Box(
+        modifier = modifier.fillMaxSize().background(Color.Black),
+        contentAlignment = Alignment.Center,
+    ) {
+        key(surfaceKey) {
+            ContentFrame(
+                player = player,
+                modifier =
+                    Modifier.fillMaxSize()
+                        .then(if (keepScreenOn) Modifier.keepScreenOn() else Modifier),
+                surfaceType = SURFACE_TYPE_SURFACE_VIEW,
+                contentScale = ContentScale.Fit,
+                keepContentOnReset = false,
+            )
+        }
+    }
 }

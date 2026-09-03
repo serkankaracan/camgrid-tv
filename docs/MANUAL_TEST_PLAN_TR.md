@@ -2,10 +2,13 @@
 
 ## Mevcut koşunun durumu
 
-Bu plandaki gerçek C500, C510W ve Mi Stick senaryolarının tamamı **BLOCKED**
-durumundadır. Fiziksel kameralara, Mi Stick'e, emülatöre veya bağlı bir adb
-cihazına erişilemedi. Fake, JVM, derleme veya port erişimi sonucu fiziksel
-doğrulama yerine kullanılmaz.
+Önceki APK ile yapılan kullanıcı testi iki kameranın `/stream2` duvar yayınını
+aynı anda gösterebildiğini doğruladı; C510W `/stream1` tam ekranı yeniden bağlanma
+döngüsüne girdi ve farklı oranlı TV'de tam ekran görüntüsü gerildi. Bu sonuçlar
+düzeltme öncesi kanıttır. Otomatik `/stream2` uyumluluk fallback'i ve Compose
+oran korumasını içeren güncel APK için aşağıdaki regresyon koşusu henüz
+tamamlanmadı. Fake, JVM, derleme veya port erişimi sonucu fiziksel doğrulama
+yerine kullanılmaz.
 
 Akış Windows 11 ve PowerShell içindir. Proje Android SDK komut satırı araçlarını
 kullanır; Android Studio gerekli değildir ve kurulu olduğu varsayılmaz.
@@ -256,8 +259,8 @@ veya `NOT RUN` ile kısa ve redakte edilmiş kanıt kaydedin.
   eşleme kodu ve ham adb/VLC logu commit'e, issue'ya, sohbete veya ekran
   görüntüsüne girmez.
 - Kamera Hesabı, Tapo bulut hesabı veya Wi-Fi parolası değildir. Hesap her kamera
-  için Tapo uygulamasında yerel yayın amacıyla oluşturulur ve yalnız CamGrid
-  TV'nin Kamera Hesabı alanlarına girilir.
+  için Tapo uygulamasında yerel yayın amacıyla oluşturulur ve yalnız KARACAM'ın
+  Kamera Hesabı alanlarına girilir.
 - Adres ve adb seri değeri gerekiyorsa PowerShell'de `Read-Host` ile alın; gerçek
   değeri komut geçmişine veya rapora yazmayın.
 - Yalnız biçim örneği (mevcut sonuç değildir):
@@ -290,7 +293,8 @@ Uyarlanabilir Doğrula → N kamerayı izle: PASS | FAIL | BLOCKED | NOT RUN —
 Duvar üst çubuğu yeniden tarama: PASS | FAIL | BLOCKED | NOT RUN — <görünürlük, odak, yeni tarama>
 TV arayüzü/safe area: PASS | FAIL | BLOCKED | NOT RUN — <960x540 ve 1280x720 gözlemi>
 C500 /stream1 tam ekran: PASS | FAIL | BLOCKED | NOT RUN — <ilk kare süresi>
-C510W /stream1 tam ekran: PASS | FAIL | BLOCKED | NOT RUN — <ilk kare süresi>
+C510W tam ekran kalite: PRIMARY PASS | FALLBACK PASS | FAIL | BLOCKED | NOT RUN — <ilk kare süresi>
+Tam ekran kaynak oranı: PASS | FAIL | BLOCKED | NOT RUN — <siyah şerit/deformasyon gözlemi>
 Back ile odak dönüşü: PASS | FAIL | BLOCKED | NOT RUN — <redakte kısa kanıt>
 Arka plan / ön plan: PASS | FAIL | BLOCKED | NOT RUN — <toparlanma süresi>
 Yerel ağ kaybı / dönüşü: PASS | FAIL | BLOCKED | NOT RUN — <toparlanma süresi>
@@ -726,7 +730,7 @@ başarısızsa `FAIL` kaydedin ve kimlik bilgili senaryolara geçmeyin.
 ### Kurulumu doğrulama ve uygulamayı veri silmeden başlatma
 
 Instrumented test PASS olduktan sonra paketin hâlâ kurulu olduğunu doğrulayıp
-CamGrid TV'yi Android TV launcher'dan açabilirsiniz. Alternatif olarak şu güvenli
+KARACAM'ı Android TV launcher'dan açabilirsiniz. Alternatif olarak şu güvenli
 adb komutunu kullanın; bu akış uygulama verisini silmez:
 
 ```powershell
@@ -734,7 +738,7 @@ $packagePath = & $adb -s $deviceSerial shell pm path $appId 2>&1
 $packagePathExitCode = $LASTEXITCODE
 $packagePath
 if ($packagePathExitCode -ne 0 -or ($packagePath | Out-String) -notmatch '(?m)^package:') {
-    throw 'CamGrid TV debug paketi cihazda kurulu değil.'
+    throw 'KARACAM debug paketi cihazda kurulu değil.'
 }
 $launchOutput = & $adb -s $deviceSerial shell am start -W `
     -a android.intent.action.MAIN `
@@ -744,12 +748,12 @@ $launchExitCode = $LASTEXITCODE
 $launchText = ($launchOutput | Out-String).Trim()
 $launchOutput
 if ($launchExitCode -ne 0 -or $launchText -match '(?im)^Error:') {
-    throw 'CamGrid TV başlatılamadı.'
+    throw 'KARACAM başlatılamadı.'
 }
 Start-Sleep -Seconds 2
 $appPid = (& $adb -s $deviceSerial shell pidof $appId 2>$null | Out-String).Trim()
 if ($LASTEXITCODE -ne 0 -or -not $appPid) {
-    throw 'CamGrid TV süreci başlatma sonrasında bulunamadı.'
+    throw 'KARACAM süreci başlatma sonrasında bulunamadı.'
 }
 Remove-Variable -Name packagePath, packagePathExitCode, launchOutput,
     launchExitCode, launchText, appPid
@@ -759,7 +763,7 @@ Remove-Variable -Name packagePath, packagePathExitCode, launchOutput,
 Kamera Hesabı girmeden yukarıdaki doğrulanmış `install -r` bloğunu bir kez daha
 çalıştırın ve sonra bu doğrulama/başlatma bloğunu yineleyin.
 
-Launcher'dan açmak için **Uygulamalar > CamGrid TV** banner'ını seçin. Banner hemen
+Launcher'dan açmak için **Uygulamalar > KARACAM** banner'ını seçin. Banner hemen
 görünmezse launcher'ı yenileyin veya Mi Stick'i bir kez yeniden başlatın; APK'yı
 tekrar tekrar kaldırıp kurmayın.
 
@@ -776,7 +780,7 @@ kimlik bilgisiz kurulum/açılış denemesi için:
    yerel dosya yöneticisinde `app-debug.apk` dosyasını açın.
 4. Android isterse **Bilinmeyen uygulamaları yükle** iznini yalnız o dosya
    yöneticisi için geçici olarak verin. Kurulum tamamlanınca izni tekrar kapatın.
-5. Launcher'dan **CamGrid TV**'yi açıp banner, ilk ekran, D-pad odağı ve crash
+5. Launcher'dan **KARACAM**'ı açıp banner, ilk ekran, D-pad odağı ve crash
    olmamasını kontrol edin. Kamera Hesabı girmeyin veya gerçek yayına başlamayın.
 
 USB bellekte `app-debug-androidTest.apk` veya `app-release-unsigned.apk` kurmayın.
@@ -831,7 +835,7 @@ kapatın.
 1. Her kamera için Tapo uygulamasında **Live View > Settings > Advanced Settings
    > Camera Account** yolundan ayrı yerel Kamera Hesabı oluşturulduğunu
    doğrulayın. Bu hesap Tapo bulut hesabı, Wi-Fi veya modem parolası değildir.
-2. CamGrid TV'yi launcher'dan açın. `$sdkLevel` en az `37` ve **Yerel ağ izni
+2. KARACAM'ı launcher'dan açın. `$sdkLevel` en az `37` ve **Yerel ağ izni
    gerekli** ekranı görünürse **Yerel ağa izin ver** adımını onaylayın. İzin daha
    önce verilmişse ekranın yeniden görünmemesi normaldir ve `FAIL` değildir. Daha
    eski SDK seviyelerinde bu runtime izin ekranını beklemeyin; doğrudan keşfe
@@ -957,18 +961,27 @@ kapatın.
 - Önkoşul: C500 tile'ı canlı ve odakta.
 - Adım: Kronometreyi başlatıp OK ile tam ekranı açın; ilk karede durdurun ve
   Back ile dönün.
-- Beklenen: C500 yüksek kaliteli `/stream1` ile tek player olarak açılır; Back
-  aynı C500 tile odağını duvarda geri yükler.
-- Kanıt: `C500 fullscreen: PASS/FAIL`, ilk kare süresi ve geri dönen odak adı.
+- Beklenen: C500 önce yüksek kaliteli `/stream1` ile tek player olarak açılır.
+  İlk oynatma girişimi başarısız olursa (kimlik veya yerel ağ hatası hariç)
+  `/stream2` fallback'i canlı görüntüyü açar. Görüntü
+  kaynak oranında kalır; TV oranı farklıysa siyah şerit oluşabilir ancak dikey veya
+  yatay deformasyon olmaz. Back aynı C500 tile odağını duvarda geri yükler.
+- Kanıt: `C500 fullscreen: PRIMARY PASS/FALLBACK PASS/FAIL`, ilk kare süresi,
+  oran gözlemi ve geri dönen odak adı.
 
-### 7. C510W `/stream1` tam ekran
+### 7. C510W `/stream1` ve uyumluluk fallback'i
 
 - Önkoşul: C510W tile'ı canlı ve odakta.
 - Adım: Kronometreyi başlatıp OK ile tam ekranı açın; ilk karede durdurun ve
   Back ile dönün.
-- Beklenen: C510W yüksek kaliteli `/stream1` ile tek player olarak açılır; Back
-  aynı C510W tile odağını duvarda geri yükler.
-- Kanıt: `C510W fullscreen: PASS/FAIL`, ilk kare süresi ve geri dönen odak adı.
+- Beklenen: C510W önce yüksek kaliteli `/stream1` ile açılır. Ana yayın oynatma
+  girişimi başarısız olursa (kimlik veya yerel ağ hatası hariç) uygulama aynı
+  oturumda bir kez `/stream2`ye geçer ve yeniden
+  bağlanma döngüsü yerine canlı görüntüyü gösterir. Fallback koptuğunda retry yine
+  `/stream2`de kalır; Back'ten sonra yeni tam ekran girişi `/stream1`i yeniden
+  dener. Kaynak en-boy oranı korunur; siyah şerit kabul edilir, gerilme edilmez.
+- Kanıt: `C510W fullscreen: PRIMARY PASS/FALLBACK PASS/FAIL`, ilk kare süresi,
+  tekrar giriş davranışı, oran gözlemi ve geri dönen odak adı.
 
 ### 8. Arka plan ve ön plan toparlanması
 
@@ -1133,12 +1146,12 @@ olabilecek 5555 dinleyicisini yalnız `adb disconnect` ile kapanmış saymayın.
 
 - Önkoşul: adb cihazı bağlı ve gerçek yayın senaryoları çalıştırılabilir.
 - Adım: Tüm cihazın log tamponunu silmeden ve diğer uygulamaların kayıtlarını
-  karıştırmadan CamGrid TV sürecini yerel terminalde canlı inceleyin:
+  karıştırmadan KARACAM sürecini yerel terminalde canlı inceleyin:
 
   ```powershell
   $appPid = (& $adb -s $deviceSerial shell pidof $appId 2>$null | Out-String).Trim()
   if ($LASTEXITCODE -ne 0 -or -not $appPid) {
-      throw 'CamGrid TV süreci logcat incelemesi için çalışmıyor.'
+      throw 'KARACAM süreci logcat incelemesi için çalışmıyor.'
   }
   & $adb -s $deviceSerial logcat --pid=$appPid -T 1
   ```
@@ -1161,7 +1174,7 @@ olabilecek 5555 dinleyicisini yalnız `adb disconnect` ile kapanmış saymayın.
   $memoryTimer = [System.Diagnostics.Stopwatch]::StartNew()
   $memoryStartPid = (& $adb -s $deviceSerial shell pidof $appId 2>$null | Out-String).Trim()
   if ($LASTEXITCODE -ne 0 -or -not $memoryStartPid) {
-      throw 'Başlangıç bellek ölçümünden önce CamGrid TV süreci bulunamadı.'
+      throw 'Başlangıç bellek ölçümünden önce KARACAM süreci bulunamadı.'
   }
   $memoryStart = & $adb -s $deviceSerial shell dumpsys meminfo $appId 2>&1
   $memoryStartExitCode = $LASTEXITCODE
@@ -1177,7 +1190,7 @@ olabilecek 5555 dinleyicisini yalnız `adb disconnect` ile kapanmış saymayın.
   }
   $memoryEndPid = (& $adb -s $deviceSerial shell pidof $appId 2>$null | Out-String).Trim()
   if ($LASTEXITCODE -ne 0 -or -not $memoryEndPid) {
-      throw 'Bitiş bellek ölçümünden önce CamGrid TV süreci bulunamadı.'
+      throw 'Bitiş bellek ölçümünden önce KARACAM süreci bulunamadı.'
   }
   $memoryEnd = & $adb -s $deviceSerial shell dumpsys meminfo $appId 2>&1
   $memoryEndExitCode = $LASTEXITCODE
@@ -1212,7 +1225,7 @@ olabilecek 5555 dinleyicisini yalnız `adb disconnect` ile kapanmış saymayın.
 
 - Önkoşul: `& $adb -s $deviceSerial shell getprop ro.build.version.sdk` sonucu en
   az `37`; duvar veya tam ekran gerçek bir yerel yayın gösteriyor.
-- Adım: Home ile sistem ayarlarına geçin, CamGrid TV debug uygulamasının **Yerel
+- Adım: Home ile sistem ayarlarına geçin, KARACAM debug uygulamasının **Yerel
   ağ** iznini kapatın ve uygulamaya geri dönün. İzin ekranı kararlı olduktan sonra
   sistem ayarlarından izni yeniden verip tekrar uygulamaya dönün.
 - Beklenen: İzin kapatılınca tüm discovery/RTSP işi ve player'lar durur, uygulama
@@ -1354,7 +1367,8 @@ ekranından onaylayın.
 `/stream2`, C510W `/stream2`, iki yayın/15 dakika, metin alanı browse/edit ve IME,
 uyarlanabilir Doğrula → N kamerayı izle, duvar üst çubuğu yeniden tarama, 960x540
 ve 1280x720 safe-area/odak görünümü, C500 `/stream1` tam ekran, C510W `/stream1`
-tam ekran, Mi Stick D-pad, lifecycle, API 37 izin iptali, ağ geri dönüşü, yanlış
+ve `/stream2` fallback tam ekranı, kaynak oranı, Mi Stick D-pad, lifecycle, API 37
+izin iptali, ağ geri dönüşü, yanlış
 parola, force-stop/kalıcılık, log gizliliği ve decoder/bellek. Her fiziksel cihaz
 sonucu kanıt yürütülene kadar `BLOCKED` kalır.
 

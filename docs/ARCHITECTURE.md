@@ -1,6 +1,6 @@
 # Architecture
 
-CamGrid TV is a single-activity, single-module Android TV application with no
+KARACAM is a single-activity, single-module Android TV application with no
 backend or background/foreground service. Discovery and playback are explicitly
 foreground-gated; lightweight ViewModel state and connectivity collections may
 remain registered while the activity is stopped.
@@ -50,11 +50,19 @@ never permits plaintext fallback. Android backup is disabled.
 
 The playback coordinator owns at most one engine for each requested wall tile.
 Switching to fullscreen releases the entire wall and creates one `/stream1`
-player. Returning recreates selected `/stream2` players. Backgrounding, leaving
-the screen, or losing connectivity releases players and cancels retries.
-Authentication and unsupported stream failures do not retry; transient failures
-use bounded exponential backoff with jitter. Decoder exhaustion remains isolated
-to its tile.
+player. If that primary stream is unsupported, cannot obtain a decoder, ends, or
+otherwise fails, the same fullscreen session switches once to that camera's
+`/stream2`; retries then remain on the fallback instead of oscillating between
+qualities. Authentication and missing local-route failures do not trigger the
+quality fallback. Returning recreates selected `/stream2` wall players and the
+next fullscreen session tries `/stream1` again.
+
+Players enable Media3's lower-priority decoder fallback. Video is rendered by
+Media3's Compose-native `ContentFrame` with `ContentScale.Fit` and a `SurfaceView`,
+so source pixel aspect ratio is preserved with letterbox/pillarbox on a differently
+shaped TV. Backgrounding, leaving the screen, or losing connectivity releases
+players and cancels retries. Transient failures use bounded exponential backoff
+with jitter; decoder exhaustion remains isolated to its slot.
 
 ## Local-network permission
 

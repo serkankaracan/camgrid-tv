@@ -71,6 +71,7 @@ data class CamGridAppUiState(
     val cameraSetup: CameraSetupUiState,
     val wall: CameraWallUiState,
     val fullscreen: FullscreenUiState? = null,
+    val playbackEngineGenerations: Map<String, Long> = emptyMap(),
 )
 
 class CamGridViewModel(private val container: AppContainer) : ViewModel() {
@@ -91,6 +92,7 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
     private var configurationLoaded = false
     private val savedCameraBootstrapGate = SavedCameraBootstrapAttemptGate()
     private var playbackStates: Map<String, PlaybackState> = emptyMap()
+    private var playbackEngineGenerations: Map<String, Long> = emptyMap()
     private var connectionStates: Map<String, ConnectionTestUiState> = emptyMap()
     private var credentialRecovery = CredentialRecoveryUiState.NotRequired
     private var selectionUpdateCameraId: String? = null
@@ -143,6 +145,12 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
             playbackCoordinator.states.collect { states ->
                 playbackStates = states
                 updateConnectionTest(states)
+                publish()
+            }
+        }
+        viewModelScope.launch {
+            playbackCoordinator.engineGenerations.collect { generations ->
+                playbackEngineGenerations = generations
                 publish()
             }
         }
@@ -980,7 +988,7 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
                             latest.selectedCameras().firstOrNull {
                                 it.id == expectedRoute.cameraId
                             } ?: return@launch
-                        val request = playbackRequest(camera, latest, RtspStream.PRIMARY)
+                        val request = fullscreenPlaybackRequest(camera, latest)
                         if (!isRouteOperationCurrent(expectedGeneration, expectedRoute)) {
                             return@launch
                         }
@@ -1060,7 +1068,7 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
                 val current = container.cameraSelectionRepository.current()
                 val camera =
                     current.selectedCameras().firstOrNull { it.id == cameraId } ?: return@launch
-                val request = playbackRequest(camera, current, RtspStream.PRIMARY)
+                val request = fullscreenPlaybackRequest(camera, current)
                 if (
                     !isRouteOperationCurrent(operationGeneration, expectedRoute) ||
                         expectedRoute !is CamGridRoute.Wall ||
@@ -1114,6 +1122,7 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
         profileId: String?,
         credentialProfiles: List<CredentialProfile>,
         stream: RtspStream,
+        fallbackStream: RtspStream? = null,
     ): PlaybackRequest {
         val secretId =
             CredentialSecretIdResolver.resolve(profileId, credentialProfiles)
@@ -1128,15 +1137,29 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
         try {
             val passwordChars = secret.copyPassword()
             try {
+                val password = String(passwordChars)
                 val uri =
                     container.rtspUriFactory.create(
                         username = secret.username,
-                        password = String(passwordChars),
+                        password = password,
                         host = camera.host,
                         port = camera.rtspPort,
                         stream = stream,
                     )
-                return PlaybackRequest(slotId = camera.id, uri = uri)
+                val fallbackUri = fallbackStream?.let { fallback ->
+                    container.rtspUriFactory.create(
+                        username = secret.username,
+                        password = password,
+                        host = camera.host,
+                        port = camera.rtspPort,
+                        stream = fallback,
+                    )
+                }
+                return PlaybackRequest(
+                    slotId = camera.id,
+                    uri = uri,
+                    fallbackUri = fallbackUri,
+                )
             } finally {
                 passwordChars.fill('\u0000')
             }
@@ -1163,6 +1186,18 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
         configuration.selectedCameras().map { camera ->
             playbackRequest(camera, configuration, RtspStream.SECONDARY)
         }
+
+    private suspend fun fullscreenPlaybackRequest(
+        camera: CameraDevice,
+        configuration: CameraConfiguration,
+    ): PlaybackRequest =
+        playbackRequest(
+            camera = camera,
+            profileId = camera.credentialProfileId,
+            credentialProfiles = configuration.credentialProfiles,
+            stream = RtspStream.PRIMARY,
+            fallbackStream = RtspStream.SECONDARY,
+        )
 
     private fun returnToDiscoveryAndScan() {
         stopPlaybackAndTransientWork()
@@ -1319,6 +1354,7 @@ class CamGridViewModel(private val container: AppContainer) : ViewModel() {
                         playbackState = effectivePlaybackStates.getValue(camera.id),
                     )
                 },
+            playbackEngineGenerations = playbackEngineGenerations,
         )
     }
 

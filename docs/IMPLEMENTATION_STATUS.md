@@ -5,15 +5,21 @@ Last updated: 2026-09-03
 ## Current candidate status
 
 The `0.1.0-alpha.1` implementation and handoff documentation are present. The
-final integrated source tree passed the Windows command-line quality gate on
-2026-09-03: 151 JVM tests passed, both lint variants completed without errors,
-and debug, instrumented-test and minified unsigned release APKs were assembled.
-The exact local evidence is recorded in `docs/TEST_REPORT.md`. Implementation
-commit `de43abc` passed GitHub Actions run `33785512583` in 7m 56s.
+current KARACAM candidate contains the issue #16 playback correction. On
+2026-09-03 its Windows command-line quality gate passed: 163 JVM tests passed,
+both lint variants completed with no errors, and debug, instrumented-test and
+minified unsigned release APKs were assembled. Exact local evidence is recorded
+in `docs/TEST_REPORT.md`. The implementation revision and GitHub Actions result
+are populated only after this tree is committed, pushed and observed. Earlier
+commit `de43abc` and run `33785512583` are historical evidence, not evidence for
+this candidate.
 
-Physical validation remains **BLOCKED** because no C500, C510W, Mi Stick,
-emulator or connected adb device is available. Build, JVM, fake-player and port
-reachability results are never treated as physical playback evidence.
+A user-run pre-fix physical test confirmed that two camera `/stream2` feeds can
+play together and exposed two regressions: the C510W `/stream1` fullscreen feed
+looped through reconnects, and fullscreen could distort on a differently shaped
+TV. The current source adds a one-way `/stream1` to `/stream2` compatibility
+fallback and a Compose-native fitted surface. Physical verification of this
+corrected APK remains pending; build and JVM results never replace it.
 
 ## Implemented scope
 
@@ -29,14 +35,16 @@ reachability results are never treated as physical playback evidence.
 - Phase 4: redesigned control-room discovery/setup, camera selection states,
   shared/per-camera credential readiness and one adaptive Verify → Watch action.
 - Phase 5: Media3 RTSP layer, safe URI construction, `/stream2` preview behavior,
-  safe state mapping and fake-player tests. Real camera playback remains blocked.
+  decoder fallback, safe state mapping and fake-player tests.
 - Phase 6: redesigned dynamic wall/fullscreen chrome, live counter, conditional
-  focusable header rescan, `/stream2` wall and `/stream1` fullscreen resource
+  focusable header rescan, `/stream2` wall, `/stream1` fullscreen with one-way
+  `/stream2` compatibility fallback, source-aspect fitting and resource
   coordination.
 - Phase 7: retry/backoff, connectivity monitoring, lifecycle recovery, decoder
   error isolation, keep-screen-on control and debug diagnostics.
 - Phase 8: redacted acceptance matrix and Windows/PowerShell physical-device
-  plan. Hardware execution remains blocked.
+  plan. A pre-fix user run exists; corrected-candidate regression and the
+  remaining measured matrix are pending.
 - Phase 9: Turkish-first README, architecture/troubleshooting documents,
   changelog, roadmap and third-party notices. No tag or GitHub Release is
   claimed.
@@ -63,11 +71,11 @@ Current integrated evidence:
 | Evidence | Status |
 | --- | --- |
 | Final integrated quality gate | PASS; PowerShell gate exited 0 |
-| Final JVM test count | PASS; 151 tests, 0 failures/errors/skipped |
-| Final debug APK size and SHA-256 | PASS; 17,088,767 bytes, `8656B1A0DD234133EBDE923BD23FF02D4B9A0F7D42A2A4FF9D23E3729E2B5737` |
-| Final revision and GitHub Actions run | PASS; implementation `de43abc`, run `33785512583` |
-| Physical Mi Stick instrumented tests | BLOCKED |
-| Physical camera and Android TV acceptance | BLOCKED |
+| Final JVM test count | PASS; 32 suites, 163 tests, 0 failures/errors/skipped |
+| Final debug APK size and SHA-256 | PASS; 17,125,741 bytes, `612BAE7ED1D87924EA9A2119E2E8C766B33B5E8DBD931460E66AFB9895947A68` |
+| Final revision and GitHub Actions run | PENDING commit, push and observation |
+| Physical Mi Stick instrumented tests | BLOCKED; no adb-connected device in this run |
+| Corrected camera and Android TV regression | PENDING user retest |
 
 ## Historical milestones — not current evidence
 
@@ -87,9 +95,9 @@ corresponding revision is pushed and observed.
 
 ## Remaining external validation
 
-When hardware is available, follow the manual plan in order: connect and
-authorize a single Mi Stick, run `connectedDebugAndroidTest` before entering
-credentials, explicitly acknowledge any uninstall/`pm clear` data loss, close
-other RTSP clients, and execute every physical scenario with redacted evidence.
-Until then, do not create a compatibility claim, release tag or GitHub Release
-based on build, fake-player or port-reachability evidence alone.
+Install the corrected APK without clearing app data and follow the focused
+C510W fullscreen/fallback and aspect-ratio scenarios in the manual plan. When adb
+is available, also authorize exactly one device and run `connectedDebugAndroidTest`
+before the remaining credential scenarios. Do not create a compatibility claim,
+release tag or GitHub Release until the corrected APK and remaining physical
+matrix have redacted evidence.
