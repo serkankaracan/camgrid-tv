@@ -44,8 +44,16 @@ tamamen kapatın. Bazı kameralar eşzamanlı RTSP oturumlarını sınırlar.
 
 ## ADB ile debug APK yükleme
 
-Android SDK platform-tools kurulu ve cihazın ağ/USB hata ayıklaması açıkken önce
-durumu görüntüleyin:
+USB zorunlu değildir: Mi Stick standart kablosuz eşleme menüsünü sunuyorsa aynı
+güvenilir Wi-Fi üzerinden ADB kullanılabilir. Doğrudan USB için veri taşıyan
+kablo/OTG gerekir; yalnız APK'yı USB belleğe kopyalamak ADB bağlantısı sağlamaz
+ve sadece kimlik bilgisiz kurulum/açılış smoke testine izin verir. Bu yolla Kamera
+Hesabı veya yayın kabulüne geçmeyin.
+
+Bağlantı yöntemini seçmek ve doğru debug APK'yı doğrulayıp kurmak için
+[fiziksel cihaz test planındaki hızlı başlangıcı](MANUAL_TEST_PLAN_TR.md)
+izleyin. Aşağıdaki komutları depo kökünde çalıştırın; buradaki durumlar hata
+ayıklama içindir:
 
 ```powershell
 $adb = (Resolve-Path -LiteralPath '.\.android-sdk\platform-tools\adb.exe').Path
@@ -53,27 +61,12 @@ $adb = (Resolve-Path -LiteralPath '.\.android-sdk\platform-tools\adb.exe').Path
 & $adb devices -l
 ```
 
-API 33+ cihaz **Kablosuz hata ayıklama > Eşleme koduyla cihaz eşleştir** menüsünü
-sunuyorsa gerçek değerleri yalnız PowerShell isteminde girin; eşleme kodunu komut
-argümanına eklemeyin:
-
-```powershell
-$pairTarget = Read-Host 'Mi Stick eşleme IP:port değeri'
-& $adb pair $pairTarget
-$connectTarget = Read-Host 'Mi Stick kablosuz hata ayıklama IP:port değeri'
-& $adb connect $connectTarget
-& $adb devices -l
-Remove-Variable -Name pairTarget, connectTarget
-```
-
-`adb tcpip 5555` cihazda bir ağ dinleyicisi açar; yarım kalan bir komut dizisi
-portu açık bırakabilir. Kablosuz eşleme menüsü olmayan eski TV/Mi Stick için
-tek satırlık komut kullanmayın. USB/OTG transport doğrulamasını, RFC1918 adres
-kontrolünü, hata halinde otomatik kapatmayı ve test sonu port probunu içeren
-[kanonik TCP 5555 akışını](MANUAL_TEST_PLAN_TR.md#eski-tvmi-stick-için-usbotgden-tcp-5555e-geçiş)
-aynen izleyin.
-
 - Liste boşsa fiziksel test `BLOCKED` olur.
+- Doğrudan USB/OTG bağlı olduğu hâlde liste boşsa veri kablosunu ve güç geçişli
+  OTG düzenini kontrol edin; Windows Aygıt Yöneticisi cihazı tanımıyorsa modelle
+  uyumlu sürücü için [Android'ın resmî OEM USB sürücüsü
+  rehberini](https://developer.android.com/studio/run/oem-usb) kullanın. Rastgele
+  sürücü paketi kurmayın.
 - `unauthorized` için TV'deki RSA istemini kabul edin; istem yoksa hata ayıklama
   yetkilerini TV'den iptal edip bağlantıyı yeniden kurun.
 - `offline` için kablosuz bağlantıyı ayırıp yeniden bağlayın; gerekirse adb
@@ -81,23 +74,21 @@ aynen izleyin.
 - Birden çok cihaz varsa diğer emülatör/USB/ağ taşımalarını ayırın.
   `connectedDebugAndroidTest` yalnız hedef Mi Stick'e ait tek `device` satırı
   varken çalıştırılmalıdır.
+- `adb pair` başarılı fakat cihaz görünmüyorsa eşleme portu yerine ana Kablosuz
+  hata ayıklama ekranındaki bağlantı `IP:port` değerini `adb connect` için
+  kullanın. İki port aynı olmak zorunda değildir.
+- `adb tcpip 5555` yarıda kalırsa ağ dinleyicisi açık kalabilir. Eski cihazda
+  yalnız [korumalı TCP 5555 akışını](MANUAL_TEST_PLAN_TR.md#legacytcp5555-eski-tvmi-stickte-usbotgden-tcp-5555e-geçiş)
+  kullanın ve test sonu port probunu atlamayın.
+- `INSTALL_FAILED_UPDATE_INCOMPATIBLE`, aynı debug paketinin farklı imzayla
+  kurulu olduğunu gösterir. Önce aynı debug anahtarını kullanmayı deneyin.
+- `INSTALL_FAILED_NO_MATCHING_ABIS` veya parse hatası alırsanız dosyanın gerçekten
+  `app-debug.apk` olduğunu ve hash/aktarımı bozulmadığını doğrulayın; test APK'sını
+  veya imzasız release APK'sını uygulama olarak kurmayın.
 
-Tek yetkili Mi Stick kaldığında APK'yı yükleyin ve herhangi bir Kamera Hesabı
-girmeden önce instrumented testleri çalıştırın:
-
-```powershell
-$deviceSerial = Read-Host 'Tek yetkili Mi Stick adb seri/adres değeri'
-& $adb -s $deviceSerial install -r '.\app\build\outputs\apk\debug\app-debug.apk'
-.\gradlew.bat --no-daemon connectedDebugAndroidTest
-```
-
-`INSTALL_FAILED_UPDATE_INCOMPATIBLE`, cihazdaki paketin farklı bir anahtarla
-imzalandığını gösterir. Mümkünse aynı anahtarla derleyin. `adb uninstall` ve
-`adb shell pm clear` seçimleri, ayarları ve Keystore ile korunan Kamera Hesabı
-verilerini geri alınamaz biçimde siler; veri kaybını açıkça kabul etmeden
-çalıştırmayın. USB/OTG → `tcpip 5555` bağlantısını test sonunda kapatma, ölçümlü
-temiz başlangıç ve force-stop/yeniden açma komutları için
-[manuel test planını](MANUAL_TEST_PLAN_TR.md) izleyin.
+`adb uninstall` ve `adb shell pm clear` seçimleri, ayarları ve Android Keystore
+ile korunan Kamera Hesabı verilerini geri alınamaz biçimde siler; manuel plandaki
+açık onay adımı olmadan çalıştırmayın.
 
 `adb logcat` çıktısını repoya eklemeyin. Paylaşım öncesinde kullanıcı adlarını,
 parolaları, tam RTSP URI'lerini ve ağ/cihaz tanımlayıcılarını kaldırın.

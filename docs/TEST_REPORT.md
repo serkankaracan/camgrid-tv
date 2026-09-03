@@ -17,7 +17,7 @@ not copy a number, hash or run ID from the historical section.
 | Check | Status | Current evidence |
 | --- | --- | --- |
 | Repository revision | PASS | Implementation commit `42d73d210c0cf06d4ba7a172715d44ba59f53abe` |
-| Standard PowerShell quality gate | PASS | `scripts\invoke-quality-gate.ps1` exited 0; final run completed in 4m 7s |
+| Standard PowerShell quality gate | PASS | `scripts\invoke-quality-gate.ps1` exited 0 in the final cached handoff rerun |
 | Debug and release lint | PASS WITH WARNINGS | Each variant: 0 fatal, 0 error, 3 warnings; two dependency-update notices and the expected xhdpi-only TV banner density advisory |
 | JVM unit tests | PASS | 31 suites; 145 tests; 0 failures, 0 errors, 0 skipped |
 | Debug APK build | PASS | `assembleDebug` completed |
@@ -25,7 +25,7 @@ not copy a number, hash or run ID from the historical section.
 | Minified release APK build | PASS | `assembleRelease` completed; artifact is deliberately unsigned and is not a release claim |
 | Secret hygiene | PASS | `Secret hygiene check passed for 153 files.` |
 | Whitespace/diff validation | PASS | `git diff --check` exited 0; the `.gitignore` LF/CRLF message is a conversion warning, not a diff error |
-| Debug APK size and SHA-256 | PASS | 17,805,949 bytes; `8C7317B0EE7B20801ECE0CBC936AE46E5D9AD814A2965756ED7F34848F4FAE9A` |
+| Debug APK size and SHA-256 | PASS | 17,005,567 bytes; `3622C9AB5014F0715FD6AA5B71B0A4E714C43134CBB063837B430F1165930987` |
 | APK identity, signing and alignment | PASS | Debug package is `io.github.serkankaracan.camgridtv.debug`, target SDK 37, Leanback launcher present; debug and test APKs verify with one v2 signer; all three APKs pass zip alignment |
 | TV banner asset | PASS | 320x180, 32-bit PNG, 79,262 bytes; packaged as the application banner |
 | adb inventory | BLOCKED | 0 connected rows; 0 authorized, unauthorized or offline devices; `connectedDebugAndroidTest` was not run |

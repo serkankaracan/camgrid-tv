@@ -61,7 +61,7 @@ Current integrated evidence:
 | --- | --- |
 | Final integrated quality gate | PASS; PowerShell gate exited 0 |
 | Final JVM test count | PASS; 145 tests, 0 failures/errors/skipped |
-| Final debug APK size and SHA-256 | PASS; 17,805,949 bytes, `8C7317B0EE7B20801ECE0CBC936AE46E5D9AD814A2965756ED7F34848F4FAE9A` |
+| Final debug APK size and SHA-256 | PASS; 17,005,567 bytes, `3622C9AB5014F0715FD6AA5B71B0A4E714C43134CBB063837B430F1165930987` |
 | Final revision and GitHub Actions run | PASS; implementation `42d73d2`, run `33729134264` |
 | Physical Mi Stick instrumented tests | BLOCKED |
 | Physical camera and Android TV acceptance | BLOCKED |

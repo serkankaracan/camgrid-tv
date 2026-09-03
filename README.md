@@ -126,45 +126,58 @@ app\build\outputs\apk\debug\app-debug.apk
 
 ## Android TV / Mi Stick kurulumu
 
-TV'de geliştirici seçeneklerini ve desteklenen USB/ağ hata ayıklama yöntemini
-etkinleştirin. Proje-yerel platform-tools yolunu kullanın:
+**USB kablosu her zaman gerekli değildir.** Mi Stick'te **Kablosuz hata
+ayıklama > Eşleme koduyla cihaz eşleştir** menüsü varsa bilgisayar ve Mi Stick
+aynı güvenilir Wi-Fi ağındayken kablosuz ADB kullanın. Bu menü yoksa veri
+taşıyabilen USB/OTG bağlantısını kullanın; eski cihazlarda USB üzerinden yetki
+verdikten sonra kontrollü TCP 5555 geçişi gerekebilir. APK'yı USB belleğe kopyalayıp
+dosya yöneticisiyle kurmak yalnız kimlik bilgisiz kurulum/açılış smoke testi
+sağlar; Kamera Hesabı veya yayın kabulüne geçilmez. Instrumented test ve logcat
+için ADB gerekir.
+
+| Dosya | Kullanım |
+| --- | --- |
+| `app\build\outputs\apk\debug\app-debug.apk` | Mi Stick'e kurulacak imzalı test uygulaması |
+| `app\build\outputs\apk\androidTest\debug\app-debug-androidTest.apk` | Gradle'ın yönettiği test paketi; elle açılmaz |
+| `app\build\outputs\apk\release\app-release-unsigned.apk` | İmzasız doğrulama çıktısı; cihaza kurulmaz |
+
+Geliştirici seçeneklerini açma, kablosuz eşleme, doğrudan USB, kontrollü eski
+cihaz TCP 5555 akışı, USB bellekle kurulum, uygulamayı başlatma ve ekran ekran
+C500/C510W kontrolü için
+[fiziksel cihaz test planını](docs/MANUAL_TEST_PLAN_TR.md) baştan sona izleyin.
+Testi başka bir Windows 11 bilgisayarda yapacaksanız aynı planın
+[başka bilgisayar hazırlığı](docs/MANUAL_TEST_PLAN_TR.md#başka-bir-windows-11-bilgisayarda-test)
+bölümünde tam test ve yalnız APK kurulumu yolları ayrı ayrı anlatılır.
+ADB bağlantısı `device` durumuna geldikten sonra temel kurulum şöyledir:
 
 ```powershell
 $adb = (Resolve-Path -LiteralPath '.\.android-sdk\platform-tools\adb.exe').Path
-& $adb start-server
-& $adb devices -l
-```
-
-API 33+ Mi Stick **Kablosuz hata ayıklama > Eşleme koduyla cihaz eşleştir**
-menüsünü sunuyorsa eşleme ve bağlantı adreslerini ayrı ayrı, yalnız istemde
-girin:
-
-```powershell
-$pairTarget = Read-Host 'Mi Stick eşleme IP:port değeri'
-& $adb pair $pairTarget
-$connectTarget = Read-Host 'Mi Stick kablosuz hata ayıklama IP:port değeri'
-& $adb connect $connectTarget
-& $adb devices -l
-Remove-Variable -Name pairTarget, connectTarget
-```
-
-Eşleme kodunu komut argümanına yazmayın; adb istediğinde girin. `adb tcpip 5555`
-cihazda bir ağ dinleyicisi açar ve yarım kalan bir komut dizisi bu portu açık
-bırakabilir. Kablosuz eşleme menüsü olmayan eski TV/Mi Stick için tek satırlık
-komut kullanmayın; USB/OTG doğrulamasını, RFC1918 adres kontrolünü ve hata halinde
-otomatik kapatmayı içeren
-[kanonik TCP 5555 akışını](docs/MANUAL_TEST_PLAN_TR.md#eski-tvmi-stick-için-usbotgden-tcp-5555e-geçiş)
-aynen izleyin.
-
-Boş liste, `unauthorized` veya `offline` durumunda ilerlemeyin. Birden çok cihaz
-varsa diğerlerini ayırın; `connectedDebugAndroidTest` hedefleyebileceği tüm bağlı
-cihazlarda çalışır. Yalnız Mi Stick'e ait tek bir `device` satırı kaldığında
-güncel APK'yı kurup, **Kamera Hesabı girmeden önce** cihaz testlerini çalıştırın:
-
-```powershell
+$apk = (Resolve-Path -LiteralPath '.\app\build\outputs\apk\debug\app-debug.apk').Path
+$appId = 'io.github.serkankaracan.camgridtv.debug'
 $deviceSerial = Read-Host 'Tek yetkili Mi Stick adb seri/adres değeri'
-& $adb -s $deviceSerial install -r '.\app\build\outputs\apk\debug\app-debug.apk'
+$deviceState = (& $adb -s $deviceSerial get-state 2>$null | Out-String).Trim()
+if ($LASTEXITCODE -ne 0 -or $deviceState -cne 'device') {
+    throw 'Mi Stick yetkili device durumunda değil.'
+}
+$installOutput = (& $adb -s $deviceSerial install -r $apk 2>&1 | Out-String).Trim()
+$installExitCode = $LASTEXITCODE
+$installOutput
+if ($installExitCode -ne 0 -or $installOutput -notmatch '(?m)^Success$') {
+    throw 'Debug APK kurulamadı; veri silmeden önce manuel plandaki hata bölümünü okuyun.'
+}
+$packagePath = (& $adb -s $deviceSerial shell pm path $appId 2>$null | Out-String).Trim()
+if ($LASTEXITCODE -ne 0 -or $packagePath -notmatch '^package:') {
+    throw 'Kurulan debug paketi doğrulanamadı.'
+}
+Remove-Variable -Name deviceState, installOutput, installExitCode, packagePath
+```
+
+**Herhangi bir Kamera Hesabı girmeden önce**, adb listesinde yalnız bir yetkili
+Mi Stick varken cihaz testlerini çalıştırın:
+
+```powershell
 .\gradlew.bat --no-daemon connectedDebugAndroidTest
+if ($LASTEXITCODE -ne 0) { throw 'Mi Stick instrumented testleri başarısız oldu.' }
 ```
 
 `INSTALL_FAILED_UPDATE_INCOMPATIBLE` imza uyuşmazlığıdır. Aynı imza anahtarını
@@ -172,8 +185,8 @@ kullanmak tercih edilir; uygulamayı kaldırmak veya `pm clear` çalıştırmak 
 seçimlerini, ayarları ve Keystore ile korunan Kamera Hesabı verilerini geri
 alınamaz biçimde siler. Veri kaybını açıkça kabul etmeden bu komutları
 çalıştırmayın. `unauthorized`, `offline`, çoklu cihaz, imza uyuşmazlığı, ölçümlü
-temiz başlangıç ve test sonu TCP 5555 kapatma adımları
-[manuel test planında](docs/MANUAL_TEST_PLAN_TR.md) bulunur.
+temiz başlangıç ve test sonu bağlantı kapatma adımları manuel test planında
+bulunur.
 
 Uygulama yalnız `LEANBACK_LAUNCHER` içerir, landscape'dir ve dokunmatik ekran
 gerektirmez. Android Studio kurulumu zorunlu değildir. Kamera bağlantı testinden
