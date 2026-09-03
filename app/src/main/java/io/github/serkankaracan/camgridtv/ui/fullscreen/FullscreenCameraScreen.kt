@@ -6,10 +6,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -17,6 +15,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -24,8 +25,8 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -71,26 +72,13 @@ fun FullscreenCameraScreen(
                         horizontal = CamGridDimens.SafeHorizontal,
                         vertical = CamGridDimens.SafeVertical,
                     )
-                    .widthIn(min = 220.dp, max = 360.dp)
-                    .background(CamGridPalette.Scrim, RoundedCornerShape(12.dp))
-                    .padding(horizontal = 16.dp, vertical = 14.dp)
-                    .testTag(UiTestTags.FullscreenMetadata),
+                    .widthIn(max = 360.dp)
+                    .testTag(UiTestTags.FullscreenTopControls),
             horizontalAlignment = Alignment.End,
         ) {
-            Text(
-                text = state.displayName,
-                modifier = Modifier.fillMaxWidth(),
-                color = CamGridPalette.TextPrimary,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.End,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
             PlaybackStatusOverlay(
                 cameraId = state.cameraId,
                 state = state.playbackState,
-                modifier = Modifier.padding(top = 8.dp),
                 announceChanges = true,
             )
             Button(
@@ -120,6 +108,32 @@ fun FullscreenCameraScreen(
                 Text(stringResource(state.viewMode.labelRes()))
             }
         }
+
+        Text(
+            text = state.displayName,
+            modifier =
+                Modifier.align(Alignment.BottomEnd)
+                    .padding(
+                        horizontal = CamGridDimens.SafeHorizontal,
+                        vertical = CamGridDimens.SafeVertical,
+                    )
+                    .widthIn(max = 360.dp)
+                    .testTag(UiTestTags.FullscreenCameraName),
+            color = CamGridPalette.TextPrimary,
+            fontSize = 24.sp,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            style =
+                TextStyle(
+                    shadow =
+                        Shadow(
+                            color = Color.Black,
+                            offset = Offset(2f, 2f),
+                            blurRadius = 5f,
+                        )
+                ),
+        )
     }
 }
 

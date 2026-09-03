@@ -22,7 +22,8 @@ object UiTestTags {
     const val WallScreen = "wall_screen"
     const val WallRescanAction = "wall_rescan_action"
     const val FullscreenScreen = "fullscreen_screen"
-    const val FullscreenMetadata = "fullscreen_metadata"
+    const val FullscreenCameraName = "fullscreen_camera_name"
+    const val FullscreenTopControls = "fullscreen_top_controls"
     const val FullscreenViewModeAction = "fullscreen_view_mode_action"
 
     fun discoveryCamera(cameraId: String): String = "discovery_camera_${safeId(cameraId)}"
@@ -38,6 +39,8 @@ object UiTestTags {
     fun connectionPreview(cameraId: String): String = "connection_preview_${safeId(cameraId)}"
 
     fun wallCamera(cameraId: String): String = "wall_camera_${safeId(cameraId)}"
+
+    fun wallLiveBadge(cameraId: String): String = "wall_live_badge_${safeId(cameraId)}"
 
     fun wallFocusIndicator(cameraId: String): String = "wall_focus_indicator_${safeId(cameraId)}"
 

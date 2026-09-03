@@ -48,7 +48,8 @@ tamamen kapatın. Bazı kameralar eşzamanlı RTSP oturumlarını sınırlar.
   kamera ile TV oranı farklıysa üst-alt veya sağ-sol siyah şerit normaldir.
   Doldur oranı koruyarak ekranı kaplar ve kenarları kırpar. Hiçbir mod görüntüyü
   yatay ya da dikey esnetmez.
-- Kamera adı, yayın durumu ve görüntü modu tam ekranda sağ üstte görünür. Görünür
+- Tam ekranda yayın durumu ve görüntü modu overscan-safe sağ üstte, gölgeli kamera
+  adı sağ altta görünür; bunları çevreleyen ortak lacivert panel yoktur. Görünür
   geri dönüş talimatının kaldırılması normaldir; Back hâlâ aynı duvar kutucuğuna
   döner.
 - Uygulama güvenilirlik için RTP-over-TCP kullanır; RTSP yine de şifrelenmemiş

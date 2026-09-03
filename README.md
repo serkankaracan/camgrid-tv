@@ -36,7 +36,9 @@ doğrula** olarak görünür; hesap seçili hedeflere kaydedilip en az bir `/str
 yayını gerçekten **Canlı** olduğunda aynı eylem **N kamerayı izle**ye dönüşür.
 Kamera keşfedilmiş olması tek başına izlemeyi açmaz: seçili her kameraya geçerli
 bir hesap profili atanmış olmalıdır. Duvar tüm kameraları kaydırmasız ekrana
-sığdırır; üst çubuk canlı yayın sayısını gösterir. Kurulum önizlemesi ve duvar
+sığdırır; üst çubuk toplam canlı yayın sayısını gösterir. Canlı bir kutucukta
+**Canlı** durumu yalnız başlıktaki rozette bir kez görünür; bağlantı ve hata
+durumları video üzerindeki durum katmanında kalır. Kurulum önizlemesi ve duvar
 kutucukları, video yüzeyinin Compose overlay'lerini veya odak çerçevesini
 örtmemesi için `TextureView` kullanır. Odaktaki kutucuk kalın ve yüksek kontrastlı
 bir çerçeveyle ayırt edilir. Çevrimdışı, yeniden bağlanan veya oynatılamayan yayın
@@ -46,9 +48,10 @@ açar, Back önceki ızgara odağını geri yükler.
 Tam ekran önce `/stream1` yüksek kaliteli yayını dener. İlk oynatma denemesi
 başarısız olursa (kimlik doğrulama veya yerel ağ yokluğu hariç) aynı oturumda
 bir kez `/stream2` yayınına geçer. Sonraki tam ekran girişinde yüksek kalite
-yeniden denenir. Tam ekran video için `SurfaceView` kullanılır; kamera adı, yayın
-durumu ve görüntü modu sağ üstteki güvenli bilgi panelindedir. Ekranda ayrıca bir
-geri dönüş talimatı gösterilmez, ancak Back aynı duvar odağına dönmeye devam eder.
+yeniden denenir. Tam ekran video için `SurfaceView` kullanılır. Yayın durumu ve
+**Görüntü** kontrolü, tümünü çevreleyen bir bilgi paneli olmadan overscan-safe sağ
+üstte; gölgeli kamera adı overscan-safe sağ alttadır. Ekranda ayrıca bir geri
+dönüş talimatı gösterilmez, ancak Back aynı duvar odağına dönmeye devam eder.
 
 Tam ekran ilk açılışta **Görüntü: Güvenli** modundadır: kaynak, genişliği ve
 yüksekliği ekranın %90'ı olan ortalanmış alana sığdırılır. Kumandada Sağ veya OK
@@ -266,12 +269,19 @@ Güncel kalite kapısı debug/release lint'i, JVM testlerini, debug ve küçült
 release APK'larını, ayrıca debug instrumented-test APK'sını kapsar. Son entegre
 koşunun sayıları, APK özeti ve CI sonucu ancak gerçekten çalıştırıldıktan sonra
 [docs/TEST_REPORT.md](docs/TEST_REPORT.md) içine yazılır; eski değerler yalnız
-tarihsel kanıt olarak etiketlenir. Önceki APK'nın kullanıcı testi iki eşzamanlı
-duvar yayınını doğruladı; C510W tam ekran ve görüntü oranı sorunlarını da ortaya
-çıkardı. Paylaşılan fotoğraflar da bu önceki APK'ya aittir. Fallback, yüzey/odak
-katmanlaması, sağ üst bilgi paneli ve görüntü modu değişikliklerini içeren güncel
-APK'nın fiziksel regresyonu ile ölçümlü adb kabul senaryoları henüz tamamlanmadı.
-Fake/emülatör testleri fiziksel kabul testi sayılmaz.
+tarihsel kanıt olarak etiketlenir. İlk fiziksel koşu iki eşzamanlı duvar yayınını
+doğruladı; C510W tam ekran ve görüntü oranı sorunlarını da ortaya çıkardı. Bu ilk
+koşunun fotoğrafları düzeltme öncesi kanıttır. Daha sonra `e720069` çalışma ağacı
+(`3a65112` uygulama kodu) için sağlanan `IMG_9754` fotoğrafı aynı karede
+iki canlı duvar akışını ve görünür odak çerçevesini; `IMG_9755` ise C500 tam ekran
+**Güvenli** görünümünü, kameranın zaman damgasını ve o sürümdeki sağ bilgi panelini
+gösterdi. Bunlar tek karelik, sürüme bağlı gözlemlerdir; 15 dakikalık kararlılığı,
+D-pad odak hareketini, üç modun döngüsünü veya C510W fallback'ini kanıtlamaz.
+Fotoğraflardan sonra yapılan kamera adını sağ alta taşıma, çevreleyen paneli
+kaldırma ve yinelenen **Canlı** durumunu tekilleştirme değişiklikleri için fiziksel
+regresyon ile ölçümlü adb kabul senaryoları henüz tamamlanmadı. Fake/emülatör
+testleri fiziksel kabul testi sayılmaz; ham kamera fotoğrafları özel ortam
+ayrıntıları nedeniyle depoya eklenmez.
 
 ## Katkı ve lisans
 
@@ -288,9 +298,12 @@ backend or telemetry. Grid streams use `/stream2`; fullscreen first tries
 `/stream1` and falls back to `/stream2` when the first playback attempt fails,
 except for authentication or missing-local-network failures.
 Embedded setup and wall feeds use `TextureView` so focus and status overlays stay
-visible, while fullscreen uses `SurfaceView`. Fullscreen information is placed at
-the upper right and its Safe 90% → Fit → Fill control always preserves source
-aspect ratio; only Fill crops edges. Audio is disabled. Remote-first fields stay
-in D-pad browse mode until OK opens editing, and setup uses one adaptive Verify →
+visible, while fullscreen uses `SurfaceView`. A live wall tile has one header
+badge; non-live states remain over the video and the screen-level count is
+aggregate. Fullscreen status and view-mode controls stay at the safe upper right
+without an enclosing information panel, while the camera name is at the safe
+bottom right. Its Safe 90% → Fit → Fill control always preserves source aspect
+ratio; only Fill crops edges. Audio is disabled. Remote-first fields stay in
+D-pad browse mode until OK opens editing, and setup uses one adaptive Verify →
 Watch action with a reachable wall rescan when feeds fail. It is unofficial and
 is not affiliated with or endorsed by TP-Link/Tapo.

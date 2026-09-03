@@ -192,7 +192,8 @@ private fun CameraWallTile(
                                     CamGridPalette.Success.copy(alpha = 0.18f),
                                     RoundedCornerShape(50),
                                 )
-                                .padding(horizontal = 8.dp, vertical = 3.dp),
+                                .padding(horizontal = 8.dp, vertical = 3.dp)
+                                .testTag(UiTestTags.wallLiveBadge(camera.id)),
                         color = CamGridPalette.Success,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
@@ -200,11 +201,13 @@ private fun CameraWallTile(
                     )
                 }
             }
-            PlaybackStatusOverlay(
-                cameraId = camera.id,
-                state = camera.playbackState,
-                modifier = Modifier.align(Alignment.BottomStart).padding(10.dp),
-            )
+            if (camera.playbackState != PlaybackState.Live) {
+                PlaybackStatusOverlay(
+                    cameraId = camera.id,
+                    state = camera.playbackState,
+                    modifier = Modifier.align(Alignment.BottomStart).padding(10.dp),
+                )
+            }
             if (focused) {
                 Box(
                     modifier =

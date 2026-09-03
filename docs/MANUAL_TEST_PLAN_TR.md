@@ -2,15 +2,28 @@
 
 ## Mevcut koşunun durumu
 
-Önceki APK ile yapılan kullanıcı testi iki kameranın `/stream2` duvar yayınını
-aynı anda gösterebildiğini doğruladı; C510W `/stream1` tam ekranı yeniden bağlanma
-döngüsüne girdi ve farklı oranlı TV'de tam ekran görüntüsü gerildi. Bu sonuçlar
-ve kullanıcı tarafından paylaşılan fotoğraflar düzeltme öncesi kanıttır. Güncel
-kaynak; otomatik `/stream2` uyumluluk fallback'ini, gömülü akışlarda
-`TextureView` odak/overlay düzeltmesini ve tam ekranda oran koruyan Güvenli/Sığdır/
-Doldur kontrolünü içerir. Bu değişiklikleri içeren APK için aşağıdaki regresyon
-koşusu henüz tamamlanmadı. Eski fotoğraflar, fake/JVM testleri, derleme veya port
-erişimi sonucu güncel APK'nın fiziksel doğrulaması yerine kullanılmaz.
+İlk APK ile yapılan kullanıcı testi iki kameranın `/stream2` duvar yayınını aynı
+anda gösterebildiğini doğruladı; C510W `/stream1` tam ekranı yeniden bağlanma
+döngüsüne girdi ve farklı oranlı TV'de tam ekran görüntüsü gerildi. Bu ilk koşunun
+fotoğrafları düzeltme öncesi kanıttır.
+
+2026-09-04 tarihinde `e720069` çalışma ağacı (`3a65112` uygulama kodu)
+için sağlanan `IMG_9754`, aynı karede iki canlı duvar akışını ve C500 üzerindeki
+görünür odak çerçevesini gösterir. `IMG_9755`, C500 tam ekran yayınını varsayılan
+**Güvenli** görünümde, kameranın sol üst zaman damgası ve o sürümün sağ bilgi
+paneli görünür halde gösterir. Bu sabit kareler yalnız bu anlık görsel alt
+kriterlerin kanıtıdır; 15 dakikalık kararlılığı, D-pad odak hareketini, ilk kare
+süresini, Güvenli/Sığdır/Doldur döngüsünü veya C510W uyumluluk fallback'ini
+kanıtlamaz.
+
+Fotoğraflardan sonra güncellenen kaynak; otomatik `/stream2` uyumluluk
+fallback'ini ve `TextureView` odak/overlay düzeltmesini korur, canlı duvar
+kutucuğundaki yinelenen **Canlı** durumunu tek başlık rozetine indirir ve tam
+ekranda kamera adını panelsiz sağ alt yerleşime taşır. Oran koruyan
+Güvenli/Sığdır/Doldur kontrolü değişmemiştir. Bu son arayüz değişikliklerini içeren
+APK için fiziksel regresyon henüz tamamlanmadı. Eski veya farklı revizyona ait
+fotoğraflar, fake/JVM testleri, derleme ya da port erişimi sonucu güncel APK'nın
+fiziksel doğrulaması yerine kullanılmaz.
 
 Akış Windows 11 ve PowerShell içindir. Proje Android SDK komut satırı araçlarını
 kullanır; Android Studio gerekli değildir ve kurulu olduğu varsayılmaz.
@@ -268,6 +281,9 @@ veya `NOT RUN` ile kısa ve redakte edilmiş kanıt kaydedin.
 - Yalnız biçim örneği (mevcut sonuç değildir):
   `C500 stream2: PASS — 15 dakika kesintisiz, 0 crash`. Gerçek endpoint veya
   hesap bilgisi eklemeyin.
+- `IMG_9754` ve `IMG_9755` ham dosyaları ev, araç veya başka özel ortam ayrıntısı
+  içerebileceğinden depoya eklenmez. Rapor yalnız yukarıda sınırlandırılmış,
+  redakte edilmiş metinsel gözlemleri ve bunların tam revision bilgisini tutar.
 
 ### Redakte sonuç şablonu
 
@@ -290,6 +306,7 @@ C500 /stream2: PASS | FAIL | BLOCKED | NOT RUN — <ilk kare süresi>
 C510W /stream2: PASS | FAIL | BLOCKED | NOT RUN — <ilk kare süresi>
 İki yayın / 15 dakika: PASS | FAIL | BLOCKED | NOT RUN — <crash ve son durum>
 D-pad odağı/duvar çerçevesi: PASS | FAIL | BLOCKED | NOT RUN — <izlenen odak sırası ve tek görünür çerçeve>
+Duvar Canlı göstergesi: PASS | FAIL | BLOCKED | NOT RUN — <tile başına tek başlık rozeti; ikinci video overlay'i yok>
 Metin alanı/ekran klavyesi: PASS | FAIL | BLOCKED | NOT RUN — <gezinme, OK, Back/Bitti sonucu>
 Uyarlanabilir Doğrula → N kamerayı izle: PASS | FAIL | BLOCKED | NOT RUN — <durum geçişi>
 Duvar üst çubuğu yeniden tarama: PASS | FAIL | BLOCKED | NOT RUN — <görünürlük, odak, yeni tarama>
@@ -297,7 +314,7 @@ TV arayüzü/safe area: PASS | FAIL | BLOCKED | NOT RUN — <960x540 ve 1280x720
 C500 /stream1 tam ekran: PASS | FAIL | BLOCKED | NOT RUN — <ilk kare süresi>
 C510W tam ekran kalite: PRIMARY PASS | FALLBACK PASS | FAIL | BLOCKED | NOT RUN — <ilk kare süresi>
 Tam ekran kaynak oranı: PASS | FAIL | BLOCKED | NOT RUN — <siyah şerit/deformasyon gözlemi>
-Tam ekran sağ üst bilgi: PASS | FAIL | BLOCKED | NOT RUN — <ad/durum/mod ve geri ipucu gözlemi>
+Tam ekran bilgi yerleşimi: PASS | FAIL | BLOCKED | NOT RUN — <ad sağ altta; durum/mod sağ üstte; çevreleyen panel ve geri ipucu yok>
 Tam ekran görüntü modları: PASS | FAIL | BLOCKED | NOT RUN — <Güvenli/Sığdır/Doldur sırası ve kırpma>
 Back ile odak dönüşü: PASS | FAIL | BLOCKED | NOT RUN — <redakte kısa kanıt>
 Arka plan / ön plan: PASS | FAIL | BLOCKED | NOT RUN — <toparlanma süresi>
@@ -927,8 +944,10 @@ kapatın.
   belirir; hiçbir video yüzeyi ad, durum veya odak katmanını örtmez. Davranış
   öngörülebilirdir ve dokunma gerektirmez.
 - Kanıt: İzlenen odak sırası ve aynı anda görünen odak çerçevesi sayısı; özel ağ
-  veya cihaz bilgisi içermeyen güncel-APK fotoğrafı isteğe bağlıdır. Önceki APK
-  fotoğraflarını bu sonuca kanıt göstermeyin.
+  veya cihaz bilgisi içermeyen, tam Git revision'ı ile eşleştirilmiş güncel-APK
+  fotoğrafı isteğe bağlıdır. `IMG_9754`, `e720069` üzerinde tek karede görünür
+  çerçeveyi gösterir; odak hareket sırasını veya fotoğraf sonrası UI adayını
+  doğrulamaz.
 
 ### 5a. Metin alanı ve ekran klavyesi
 
@@ -963,19 +982,26 @@ kapatın.
   Retrying veya PlaybackFailed durumuna getirip D-pad Yukarı ile **Kameraları
   yeniden tara** eylemine ulaşın ve OK'a basın.
 - Beklenen: Eylem sağlıklı duvarda gizli, belirtilen hata durumlarında görünür ve
-  kamera kutularıyla çakışmadan odaklanabilir. OK keşif ekranına döndürür ve yeni
-  taramayı başlatır.
-- Kanıt: Sağlıklı/hatalı görünürlük, odak yolu ve yeni taramanın başladığı; özel
-  ağ veya kamera bilgisi kaydedilmez.
+  kamera kutularıyla çakışmadan odaklanabilir. Her canlı tile'da **Canlı** yalnız
+  başlıktaki tek rozette görünür; video üzerinde ikinci **Canlı** katmanı yoktur.
+  Üst çubuktaki **N canlı** rozeti ayrı bir toplamdır. Canlı olmayan bir tile'ın
+  bağlantı veya hata durumu video üzerinde görünmeye devam eder. OK keşif ekranına
+  döndürür ve yeni taramayı başlatır.
+- Kanıt: Sağlıklı/hatalı görünürlük, tile başına **Canlı** rozet sayısı, odak yolu
+  ve yeni taramanın başladığı; özel ağ veya kamera bilgisi kaydedilmez. `IMG_9754`
+  iki canlı akışı gösterse de yinelenen rozetlerin kaldırılmasından önce çekildiği
+  için bu son yerleşimin PASS kanıtı değildir.
 
-### 5d. Tam ekran bilgi paneli ve görüntü modu
+### 5d. Tam ekran bilgi yerleşimi ve görüntü modu
 
 - Önkoşul: En az bir duvar tile'ı canlı ve fiziksel kumanda bağlı.
-- Adım: Odaktaki tile'da OK ile tam ekranı açın. Sağ üst paneli gözleyin; görünür
-  **Görüntü** kontrolü odaktayken Sağ'a üç kez, sonra Sol'a bir kez basın. Ayrı bir
-  tekrarda OK ile modu ilerletin ve son olarak Back ile duvara dönün.
-- Beklenen: Kamera adı, yayın durumu ve görüntü modu overscan-safe sağ üst panelde
-  görünür; ekranda kalıcı bir geri dönüş talimatı yoktur. Uygulama yeni
+- Adım: Odaktaki tile'da OK ile tam ekranı açın. Sağ üstteki durum ve **Görüntü**
+  kontrolünü, sağ alttaki kamera adını ve bunların çevresini gözleyin. **Görüntü**
+  kontrolü odaktayken Sağ'a üç kez, sonra Sol'a bir kez basın. Ayrı bir tekrarda
+  OK ile modu ilerletin ve son olarak Back ile duvara dönün.
+- Beklenen: Yayın durumu ve görüntü modu overscan-safe sağ üstte, gölgeli kamera
+  adı overscan-safe sağ altta görünür; bu öğeleri birlikte çevreleyen kalıcı bir
+  bilgi paneli/kart ve ekranda kalıcı bir geri dönüş talimatı yoktur. Uygulama yeni
   başlatıldığında varsayılan **Görüntü: Güvenli**, kaynağı genişliği ve yüksekliği
   ekranın %90'ı olan ortalanmış alanda eksiksiz gösterir.
   Sağ veya OK sırası **Güvenli → Sığdır → Doldur → Güvenli**, Sol sırası bunun
@@ -983,9 +1009,12 @@ kapatın.
   şerit kabul edilir. Doldur ekranı kaynak oranını bozmadan kaplar ve yalnız
   kenarları kırpar. Hiçbir mod görüntüyü yatay/dikey esnetmez. Mod değiştirmek
   yayını yeniden bağlatmaz; Back aynı duvar tile'ının odağını geri yükler.
-- Kanıt: Mod sırası, %90 güvenli alan, siyah şerit/kırpma ve yeniden bağlantı
-  gözlemi. Parola, IP, seri veya başka özel bilgi içermeyen güncel-APK fotoğrafı
-  kullanılabilir; önceki fotoğraflar bu senaryoyu doğrulamaz.
+- Kanıt: Adın sağ alt konumu, çevreleyen panelin yokluğu, mod sırası, %90 güvenli
+  alan, siyah şerit/kırpma ve yeniden bağlantı gözlemi. Parola, IP, seri veya başka
+  özel bilgi içermeyen ve tam Git revision'ı ile eşleştirilmiş güncel-APK fotoğrafı
+  kullanılabilir. `IMG_9755`, `e720069` üzerinde C500 **Güvenli** karesini ve
+  kamera zaman damgasının görünürlüğünü doğrular; eski sağ paneli gösterdiğinden
+  fotoğraf sonrası panelsiz yerleşimi veya üç mod döngüsünü doğrulamaz.
 
 ### 6. C500 `/stream1` tam ekran
 
@@ -1000,6 +1029,10 @@ kapatın.
   deformasyon olmaz. Back aynı C500 tile odağını duvarda geri yükler.
 - Kanıt: `C500 fullscreen: PRIMARY PASS/FALLBACK PASS/FAIL`, ilk kare süresi,
   oran gözlemi ve geri dönen odak adı.
+- Sınırlandırılmış mevcut kanıt: `IMG_9755`, `e720069` üzerinde yalnız C500'in
+  **Güvenli** tam ekran karesini ve kamera zaman damgasının görünürlüğünü gösterir;
+  ilk kare süresini, kullanılan stream yolunu, üç mod döngüsünü veya güncel bilgi
+  yerleşimini kanıtlamaz.
 
 ### 7. C510W `/stream1` ve uyumluluk fallback'i
 
@@ -1399,12 +1432,16 @@ ekranından onaylayın.
 `connectedDebugAndroidTest`, temiz başlangıç, C500 keşif, C510W keşif, C500
 `/stream2`, C510W `/stream2`, iki yayın/15 dakika, metin alanı browse/edit ve IME,
 uyarlanabilir Doğrula → N kamerayı izle, gömülü önizleme/overlay katmanlaması,
-duvar üst çubuğu yeniden tarama, tek görünür duvar odak çerçevesi, 960x540 ve
-1280x720 safe-area görünümü, C500 `/stream1` tam ekran, C510W `/stream1` ve
-`/stream2` fallback tam ekranı, sağ üst bilgi paneli, Güvenli/Sığdır/Doldur döngüsü,
-kaynak oranı, Mi Stick D-pad, lifecycle, API 37 izin iptali, ağ geri dönüşü, yanlış
-parola, force-stop/kalıcılık, log gizliliği ve decoder/bellek. Her fiziksel cihaz
-sonucu kanıt yürütülene kadar `BLOCKED` kalır.
+duvar üst çubuğu yeniden tarama, tile başına tek **Canlı** rozeti, tek görünür
+duvar odak çerçevesi, 960x540 ve 1280x720 safe-area görünümü, C500 `/stream1` tam
+ekran, C510W `/stream1` ve `/stream2` fallback tam ekranı, sağ altta kamera adı,
+sağ üstte panelsiz durum/mod kontrolü, Güvenli/Sığdır/Doldur döngüsü, kaynak oranı,
+Mi Stick D-pad, lifecycle, API 37 izin iptali, ağ geri dönüşü, yanlış parola,
+force-stop/kalıcılık, log gizliliği ve decoder/bellek. Her sonuç gerçek koşuluna
+göre `PASS`, `FAIL`, `BLOCKED` veya `NOT RUN` olarak yazılır. `e720069` fotoğraf
+gözlemleri yalnız yukarıda belirtilen alt kriterlere aittir; fotoğraf sonrası
+adayın değişen arayüz kriterleri aynı Git revision'ına ait fiziksel kanıt oluşana
+kadar `NOT RUN` kalır.
 
 `UsbStorageOnly` fallback'ini kullandıysanız yukarıdaki adb bloğunu çalıştırmayın.
 USB belleği güvenle çıkarın, dosya yöneticisinin **Bilinmeyen uygulamaları yükle**

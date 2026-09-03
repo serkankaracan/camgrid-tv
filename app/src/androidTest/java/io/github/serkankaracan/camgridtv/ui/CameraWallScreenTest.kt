@@ -9,6 +9,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -21,6 +22,7 @@ import io.github.serkankaracan.camgridtv.ui.fullscreen.FullscreenCameraScreen
 import io.github.serkankaracan.camgridtv.ui.fullscreen.FullscreenUiAction
 import io.github.serkankaracan.camgridtv.ui.fullscreen.FullscreenUiState
 import io.github.serkankaracan.camgridtv.ui.fullscreen.FullscreenViewMode
+import io.github.serkankaracan.camgridtv.ui.theme.CamGridDimens
 import io.github.serkankaracan.camgridtv.ui.theme.CamGridTheme
 import io.github.serkankaracan.camgridtv.ui.wall.CameraWallScreen
 import io.github.serkankaracan.camgridtv.ui.wall.CameraWallUiAction
@@ -75,6 +77,71 @@ class CameraWallScreenTest {
                 .onNodeWithTag("fake-video-${camera.id}", useUnmergedTree = true)
                 .assertIsDisplayed()
         }
+    }
+
+    @Test
+    fun liveWallUsesHeaderBadgeWithoutDuplicateBottomStatus() {
+        val liveCamera =
+            WallCameraUiModel(
+                id = "live-camera",
+                displayName = "Live Camera",
+                playbackState = PlaybackState.Live,
+            )
+        val connectingCamera =
+            WallCameraUiModel(
+                id = "connecting-camera",
+                displayName = "Connecting Camera",
+                playbackState = PlaybackState.Connecting,
+            )
+        val secondaryPlaybackState = mutableStateOf<PlaybackState>(PlaybackState.Connecting)
+        composeRule.setContent {
+            CamGridTheme {
+                CameraWallScreen(
+                    state =
+                        CameraWallUiState(
+                            listOf(
+                                liveCamera,
+                                connectingCamera.copy(playbackState = secondaryPlaybackState.value),
+                            )
+                        ),
+                    onAction = {},
+                )
+            }
+        }
+
+        composeRule
+            .onNodeWithTag(UiTestTags.wallLiveBadge(liveCamera.id), useUnmergedTree = true)
+            .assertIsDisplayed()
+        composeRule
+            .onNodeWithTag(UiTestTags.playbackStatus(liveCamera.id), useUnmergedTree = true)
+            .assertDoesNotExist()
+        composeRule
+            .onNodeWithTag(UiTestTags.wallLiveBadge(connectingCamera.id), useUnmergedTree = true)
+            .assertDoesNotExist()
+        composeRule
+            .onNodeWithTag(UiTestTags.playbackStatus(connectingCamera.id), useUnmergedTree = true)
+            .assertIsDisplayed()
+
+        listOf(
+                PlaybackState.Retrying(attempt = 2, nextDelayMillis = 4_000),
+                PlaybackState.AuthenticationFailed,
+            )
+            .forEach { nonLiveState ->
+                composeRule.runOnIdle { secondaryPlaybackState.value = nonLiveState }
+
+                composeRule
+                    .onNodeWithTag(
+                        UiTestTags.wallLiveBadge(connectingCamera.id),
+                        useUnmergedTree = true,
+                    )
+                    .assertDoesNotExist()
+                composeRule
+                    .onNodeWithTag(
+                        UiTestTags.playbackStatus(connectingCamera.id),
+                        useUnmergedTree = true,
+                    )
+                    .assertIsDisplayed()
+            }
     }
 
     @Test
@@ -150,9 +217,18 @@ class CameraWallScreenTest {
             composeRule.onNodeWithTag(UiTestTags.FullscreenScreen).getUnclippedBoundsInRoot()
         val safeVideoBounds =
             composeRule.onNodeWithTag("fake-fullscreen-video").getUnclippedBoundsInRoot()
-        val metadataBounds =
-            composeRule.onNodeWithTag(UiTestTags.FullscreenMetadata).getUnclippedBoundsInRoot()
+        val cameraName = composeRule.onNodeWithTag(UiTestTags.FullscreenCameraName)
+        val playbackStatus = composeRule.onNodeWithTag(UiTestTags.playbackStatus("camera-1"))
+        val topControls = composeRule.onNodeWithTag(UiTestTags.FullscreenTopControls)
         val viewModeAction = composeRule.onNodeWithTag(UiTestTags.FullscreenViewModeAction)
+        cameraName.assertIsDisplayed().assertTextEquals("Camera 1")
+        playbackStatus.assertIsDisplayed()
+        topControls.assertIsDisplayed()
+        viewModeAction.assertIsDisplayed()
+        val cameraNameBounds = cameraName.getUnclippedBoundsInRoot()
+        val statusBounds = playbackStatus.getUnclippedBoundsInRoot()
+        val topControlsBounds = topControls.getUnclippedBoundsInRoot()
+        val viewModeBounds = viewModeAction.getUnclippedBoundsInRoot()
         val screenWidth = (screenBounds.right - screenBounds.left).value
         val screenHeight = (screenBounds.bottom - screenBounds.top).value
         val safeVideoWidth = (safeVideoBounds.right - safeVideoBounds.left).value
@@ -178,7 +254,21 @@ class CameraWallScreenTest {
             safeVideoBounds.bottom.value,
             1.5f,
         )
-        assertTrue(metadataBounds.left.value >= screenBounds.left.value + screenWidth / 2f)
+        val screenHorizontalCenter = screenBounds.left.value + screenWidth / 2f
+        val screenVerticalCenter = screenBounds.top.value + screenHeight / 2f
+        val safeHorizontal = CamGridDimens.SafeHorizontal.value
+        val safeVertical = CamGridDimens.SafeVertical.value
+        assertTrue(cameraNameBounds.left.value >= screenHorizontalCenter)
+        assertTrue(cameraNameBounds.top.value >= screenVerticalCenter)
+        assertTrue(cameraNameBounds.right.value <= screenBounds.right.value - safeHorizontal + 1f)
+        assertTrue(cameraNameBounds.bottom.value <= screenBounds.bottom.value - safeVertical + 1f)
+        assertTrue(statusBounds.left.value >= screenHorizontalCenter)
+        assertTrue(statusBounds.bottom.value <= screenVerticalCenter)
+        assertTrue(statusBounds.top.value >= screenBounds.top.value + safeVertical - 1f)
+        assertTrue(statusBounds.right.value <= screenBounds.right.value - safeHorizontal + 1f)
+        assertTrue(topControlsBounds.left.value >= screenHorizontalCenter)
+        assertTrue(topControlsBounds.bottom.value <= screenVerticalCenter)
+        assertTrue(statusBounds.bottom.value <= viewModeBounds.top.value)
         viewModeAction.assertIsFocused().performKeyInput { pressKey(Key.DirectionRight) }
         composeRule.runOnIdle { assertEquals(FullscreenViewMode.FIT, viewMode.value) }
         val fitVideoBounds =

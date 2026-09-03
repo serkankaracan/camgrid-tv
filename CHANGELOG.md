@@ -55,9 +55,14 @@ All notable changes follow Keep a Changelog principles.
   video surface so non-16:9 displays preserve the camera's source aspect ratio.
 - Use `TextureView` for embedded setup/wall feeds so video cannot cover Compose
   overlays or the stronger wall focus border; retain `SurfaceView` for fullscreen.
-- Move fullscreen camera/status information to an overscan-safe upper-right panel,
-  remove the persistent Back hint, and add a D-pad-operated Safe 90% → Fit → Fill
-  cycle. Every mode preserves aspect ratio and only Fill crops edges.
+- Keep one per-camera Live badge in each wall tile header instead of repeating
+  the same live state over the video; the screen-level live count remains an
+  aggregate.
+- Place fullscreen status and view-mode controls at the overscan-safe upper right
+  without an enclosing information panel, place the shadowed camera name at the
+  safe bottom right, remove the persistent Back hint, and add a D-pad-operated
+  Safe 90% → Fit → Fill cycle. Every mode preserves aspect ratio and only Fill
+  crops edges.
 - Rename the Gradle project and user-visible product/launcher branding to KARACAM
   while retaining the package and persistence identifiers for in-place updates.
 
@@ -76,9 +81,15 @@ All notable changes follow Keep a Changelog principles.
 
 - A user-run pre-fix physical test confirmed two concurrent wall streams and
   exposed a C510W `/stream1` fullscreen reconnect loop plus display-ratio
-  distortion. Supplied photographs show the APK before the latest surface,
-  focus, information-panel and scale-control changes; the corrected APK still
-  requires a physical regression run.
+  distortion.
+- Static `IMG_9754` and `IMG_9755` user photographs for the `e720069` tree
+  (`3a65112` application implementation) verify two simultaneous wall frames, a
+  visible focus frame, and a C500 fullscreen Safe frame with its timestamp and
+  then-current right-side panel visible. They do not prove elapsed stability,
+  D-pad focus movement, the view-mode cycle or the C510W fullscreen fallback.
+- Those photographs capture the superseded duplicate Live treatment and
+  right-side panel. The later single-Live, panel-free and bottom-right-name UI
+  still requires a physical regression run on its exact APK revision.
 - Instrumented tests, API 37 permission revocation, measured logcat and
   decoder/memory evidence require an adb-connected run. The 15-minute stability,
   lifecycle, Wi-Fi recovery and wrong-password scenarios also remain pending on

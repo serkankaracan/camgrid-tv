@@ -61,16 +61,19 @@ Players enable Media3's lower-priority decoder fallback. All video is hosted by
 Media3's Compose-native `ContentFrame`, but the surface type follows the UI role.
 The embedded setup preview and wall tiles use `TextureView` so Compose clipping,
 rounded containers, status overlays and the five-dp focus border remain above the
-video. Fullscreen alone uses `SurfaceView`.
+video. A live wall tile renders its per-camera Live state once in the tile header;
+only non-live states use the video overlay. The wall header's live count is a
+separate aggregate. Fullscreen alone uses `SurfaceView`.
 
 Fullscreen view state starts at `SAFE`: `ContentScale.Fit` inside a centered
 viewport whose width and height are each 90% of the logical screen. `FIT` uses the
 full logical viewport with `ContentScale.Fit`; `FILL` uses the full viewport with
 `ContentScale.Crop`. D-pad Right or OK advances
 `SAFE → FIT → FILL → SAFE`, while Left moves in reverse. Every mode preserves the
-source pixel aspect ratio; only `FILL` crops edges. The camera name, playback
-status and mode control share an overscan-safe upper-right panel. Back navigation
-remains active without a persistent on-screen return hint.
+source pixel aspect ratio; only `FILL` crops edges. Playback status and the mode
+control occupy the overscan-safe upper right without a shared enclosing panel.
+The shadowed camera name is independently anchored at the overscan-safe bottom
+right. Back navigation remains active without a persistent on-screen return hint.
 
 Backgrounding, leaving the screen, or losing connectivity releases players and
 cancels retries. Transient failures use bounded exponential backoff with jitter;
