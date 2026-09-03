@@ -10,27 +10,27 @@ port check, fake or emulator test is not physical camera or Mi Stick evidence.
 ## Current candidate verification
 
 This section is the only source of truth for the current candidate. Local
-evidence was measured on 2026-09-03 after the fullscreen fallback, fitted video
-surface and KARACAM branding changes, then the exact implementation tree was
-committed, pushed and observed in GitHub Actions. Do not copy a number, hash or
-run ID from the historical section.
+evidence was measured on 2026-09-03 after the fullscreen fallback, embedded
+surface/focus layering, overscan-safe viewport and KARACAM branding changes.
+The exact implementation tree was committed, pushed and observed in GitHub
+Actions. Do not copy a number, hash or run ID from the historical section.
 
 | Check | Status | Current evidence |
 | --- | --- | --- |
-| Repository revision | PASS | Implementation commit `371ef84363f8390e45d8a40881fc5a16f120b5ac` |
+| Repository revision | PASS | Implementation commit `3a65112746ff5db9fd73dcca4ce1342924b1265a` |
 | Standard PowerShell quality gate | PASS | `invoke-quality-gate.ps1` exited 0; the required Gradle tasks, secret scan and diff check completed |
 | Debug and release lint | PASS WITH WARNINGS | Each variant: 0 fatal, 0 error, 4 warnings: two upgrade notices plus unused and missing-density advisories from the unreferenced legacy banner |
-| JVM unit tests | PASS | 32 suites; 163 tests; 0 failures, 0 errors, 0 skipped |
+| JVM unit tests | PASS | 33 suites; 166 tests; 0 failures, 0 errors, 0 skipped |
 | Debug APK build | PASS | `assembleDebug` completed |
 | Debug instrumented-test APK build | PASS | `assembleDebugAndroidTest` completed; compilation is not physical execution |
 | Minified release APK build | PASS | `assembleRelease` completed; artifact is deliberately unsigned and is not a release claim |
-| Secret hygiene | PASS | `Secret hygiene check passed for 159 files.` |
+| Secret hygiene | PASS | `Secret hygiene check passed for 160 files.` |
 | Whitespace/diff validation | PASS | `git diff --check` exited 0; the `.gitignore` LF/CRLF message is a conversion warning, not a diff error |
-| Debug APK size and SHA-256 | PASS | 17,125,741 bytes; `612BAE7ED1D87924EA9A2119E2E8C766B33B5E8DBD931460E66AFB9895947A68` |
+| Debug APK size and SHA-256 | PASS | 17,126,597 bytes; `431CAAF98497B93E2A4410B63DA90BC31B09F38149EE3813DA3CBA5244E59002` |
 | APK identity, signing and alignment | PASS | Debug package is `io.github.serkankaracan.camgridtv.debug`, target SDK 37, Leanback launcher present; debug and test APKs verify with one v2 signer; all three APKs pass zip alignment |
 | Product identity and TV banner | PASS | Packaged application label is `KARACAM`; manifest points to the new density-independent KARACAM vector banner; stable package ID is retained for in-place updates |
 | adb inventory | BLOCKED | 0 connected rows; 0 authorized, unauthorized or offline devices; `connectedDebugAndroidTest` was not run |
-| GitHub Actions | PASS | Android quality gate run [33798554004](https://github.com/serkankaracan/camgrid-tv/actions/runs/33798554004) passed in 7m 14s for the implementation commit |
+| GitHub Actions | PASS | Android quality gate run [33803695693](https://github.com/serkankaracan/camgrid-tv/actions/runs/33803695693) passed in 6m 1s for the implementation commit |
 
 Run the final local evidence from Windows PowerShell, without assuming Android
 Studio:
@@ -73,10 +73,14 @@ deliberately isolated here so they cannot be mistaken for final candidate data.
 The user supplied a physical run of the previous APK: two camera `/stream2`
 feeds rendered together, while the identified C510W entered a reconnect loop
 only after fullscreen selected `/stream1`; fullscreen also distorted on a TV
-whose display ratio differs from the stream. These are valid, secret-free
-pre-fix observations and explain issue #16, but they are not evidence that the
-corrected APK passes. This development environment still has no adb-connected
-device, so current-build device automation and regression checks remain blocked.
+whose display ratio differs from the stream. Later photographs of that APK show
+that video could cover the left wall tile's app chrome/focus treatment and that
+the camera's own top-left timestamp was clipped by the physical TV edge in
+fullscreen. Input still selected the left tile despite the missing visual frame.
+These are valid, secret-free pre-fix observations and explain the current work,
+but they are not evidence that the corrected APK passes. This development
+environment still has no adb-connected device, so current-build device
+automation and regression checks remain blocked.
 
 ### Pre-fix user observations
 
@@ -87,6 +91,8 @@ device, so current-build device automation and regression checks remain blocked.
 | C510W wall playback | `/stream2` displayed normally |
 | C510W fullscreen | `/stream1` cycled through connecting/reconnecting and did not show live video |
 | Fullscreen geometry | Video was vertically distorted on the user's differently shaped TV |
+| Wall focus and app chrome | The left tile remained selectable, but its visible focus frame, camera name and status chrome were missing in the supplied photograph |
+| Fullscreen edge visibility | The camera's own top-left date/time was clipped at the physical TV edge; KARACAM camera/status text was still on the left |
 
 ### Current corrected candidate
 
@@ -100,7 +106,8 @@ device, so current-build device automation and regression checks remain blocked.
 | Validate C500 `/stream2` | NOT RUN | Prescribed corrected-candidate scenario was not reported |
 | Validate C510W `/stream2` | NOT RUN | Corrected APK has not yet been installed; pre-fix `/stream2` passed |
 | Run two `/stream2` feeds together for 15 minutes | NOT RUN | Pre-fix feeds displayed together, but no measured 15-minute run was reported |
-| Change wall focus with the physical D-pad | NOT RUN | Prescribed D-pad sequence was not reported |
+| Change wall focus with the physical D-pad | NOT RUN | Corrected APK must show exactly one thick frame as focus moves left and right; pre-fix input-only selection is insufficient |
+| Keep both wall tiles' camera name/status above video | NOT RUN | Corrected TextureView-backed wall has not been checked on the physical TV |
 | Verify browse-mode arrows, OK-to-edit, Back/IME Done and password masking | NOT RUN | Prescribed physical IME sequence was not reported |
 | Verify adaptive Verify connection → N cameras action with real feeds | NOT RUN | Prescribed corrected-candidate sequence was not reported |
 | Verify conditional header rescan, D-pad reachability and fresh discovery | NOT RUN | Prescribed corrected-candidate sequence was not reported |
@@ -109,6 +116,9 @@ device, so current-build device automation and regression checks remain blocked.
 | Open C510W `/stream1` fullscreen with OK | NOT RUN | Corrected APK has not yet been installed; see pre-fix failure above |
 | Verify current C510W `/stream1` to `/stream2` fullscreen fallback | BLOCKED | Corrected APK has not yet been installed on the physical device |
 | Preserve source aspect ratio in fullscreen | BLOCKED | Corrected Compose surface retest is pending; pre-fix geometry failed |
+| Keep the camera's top-left timestamp visible in Safe mode | NOT RUN | The centered 90% viewport requires a physical overscan retest |
+| Show KARACAM camera/status/mode chrome at upper right with no Back hint | NOT RUN | Corrected fullscreen panel has not been checked on the physical TV |
+| Cycle Safe/Fit/Fill with Left, Right and OK without reconnecting | NOT RUN | The D-pad sequence and live-player continuity require a physical retest |
 | Return to the wall and restore focus with Back | NOT RUN | Prescribed corrected-candidate sequence was not reported |
 | Background/foreground lifecycle recovery | NOT RUN | Prescribed corrected-candidate sequence was not reported |
 | Revoke and restore API 37 local-network permission during playback | BLOCKED | Requires an adb-connected API 37 device |
@@ -122,9 +132,13 @@ device, so current-build device automation and regression checks remain blocked.
 
 Automated tests cover discovery parsing/deduplication, secure configuration, URI
 encoding/redaction, retry/state reducers, layout calculations, lifecycle
-coordination, setup primary-action policy, fake UI focus/state behavior and the
-new one-way fullscreen fallback. They verify eligible primary failures switch to
-secondary, authentication/route failures do not, fallback retries stay secondary,
-Back cancels pending fallback work, and a new fullscreen session tries primary
-again. The browse/edit and UI instrumented sources compile but were not executed
-without a connected device. None replaces the corrected-APK physical scenarios.
+coordination, setup primary-action policy, fake UI focus/state behavior, the
+one-way fullscreen fallback and the Safe/Fit/Fill state cycle. They verify
+eligible primary failures switch to secondary, authentication/route failures do
+not, fallback retries stay secondary, Back cancels pending fallback work, and a
+new fullscreen session tries primary again. The compiled Compose instrumented
+test also prescribes left-to-right wall focus movement, centered 5% Safe margins,
+full-viewport Fit and remote mode switching. Instrumented sources compile but
+were not executed without a connected device; they do not prove real TextureView
+layering, SurfaceView overscan or player continuity. None replaces the corrected
+APK physical scenarios.

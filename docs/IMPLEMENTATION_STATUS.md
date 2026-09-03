@@ -5,21 +5,24 @@ Last updated: 2026-09-03
 ## Current candidate status
 
 The `0.1.0-alpha.1` implementation and handoff documentation are present. The
-current KARACAM candidate contains the issue #16 playback correction. On
-2026-09-03 its Windows command-line quality gate passed: 163 JVM tests passed,
-both lint variants completed with no errors, and debug, instrumented-test and
-minified unsigned release APKs were assembled. Exact local evidence is recorded
-in `docs/TEST_REPORT.md`. The implementation revision and GitHub Actions result
-are implementation commit `371ef84` and passing GitHub Actions run
-`33798554004` (7m 14s). Earlier commit `de43abc` and run `33785512583` are
-historical evidence, not evidence for this candidate.
+current KARACAM candidate contains the issue #16 playback correction plus the
+wall focus/overlay and fullscreen overscan corrections. On 2026-09-03 its
+Windows command-line quality gate passed: 166 JVM tests passed, both lint
+variants completed with no errors, and debug, instrumented-test and minified
+unsigned release APKs were assembled. Exact local evidence is recorded in
+`docs/TEST_REPORT.md`. The implementation revision is `3a65112`; GitHub Actions
+run `33803695693` passed in 6m 1s. Earlier commits `371ef84` and `de43abc` and
+their runs are historical evidence, not evidence for this candidate.
 
 A user-run pre-fix physical test confirmed that two camera `/stream2` feeds can
-play together and exposed two regressions: the C510W `/stream1` fullscreen feed
-looped through reconnects, and fullscreen could distort on a differently shaped
-TV. The current source adds a one-way `/stream1` to `/stream2` compatibility
-fallback and a Compose-native fitted surface. Physical verification of this
-corrected APK remains pending; build and JVM results never replace it.
+play together and exposed the C510W `/stream1` fullscreen reconnect loop. Later
+photographs showed that the left wall tile's focus/chrome could render behind
+video even though input still selected it, and that TV overscan clipped the
+camera's own top-left timestamp in fullscreen. The current source adds a one-way
+`/stream1` to `/stream2` compatibility fallback, deterministic embedded-video
+layering, a stronger wall focus treatment and aspect-preserving Safe/Fit/Fill
+fullscreen modes. Physical verification of this corrected APK remains pending;
+build and JVM results never replace it.
 
 ## Implemented scope
 
@@ -38,7 +41,8 @@ corrected APK remains pending; build and JVM results never replace it.
   decoder fallback, safe state mapping and fake-player tests.
 - Phase 6: redesigned dynamic wall/fullscreen chrome, live counter, conditional
   focusable header rescan, `/stream2` wall, `/stream1` fullscreen with one-way
-  `/stream2` compatibility fallback, source-aspect fitting and resource
+  `/stream2` compatibility fallback, TextureView-backed embedded chrome/focus,
+  a right-side fullscreen panel, Safe/Fit/Fill source-aspect modes and resource
   coordination.
 - Phase 7: retry/backoff, connectivity monitoring, lifecycle recovery, decoder
   error isolation, keep-screen-on control and debug diagnostics.
@@ -71,9 +75,9 @@ Current integrated evidence:
 | Evidence | Status |
 | --- | --- |
 | Final integrated quality gate | PASS; PowerShell gate exited 0 |
-| Final JVM test count | PASS; 32 suites, 163 tests, 0 failures/errors/skipped |
-| Final debug APK size and SHA-256 | PASS; 17,125,741 bytes, `612BAE7ED1D87924EA9A2119E2E8C766B33B5E8DBD931460E66AFB9895947A68` |
-| Final revision and GitHub Actions run | PASS; implementation `371ef84`, run `33798554004` |
+| Final JVM test count | PASS; 33 suites, 166 tests, 0 failures/errors/skipped |
+| Final debug APK size and SHA-256 | PASS; 17,126,597 bytes, `431CAAF98497B93E2A4410B63DA90BC31B09F38149EE3813DA3CBA5244E59002` |
+| Final revision and GitHub Actions run | PASS; implementation `3a65112`, run `33803695693` (6m 1s) |
 | Physical Mi Stick instrumented tests | BLOCKED; no adb-connected device in this run |
 | Corrected camera and Android TV regression | PENDING user retest |
 
@@ -95,9 +99,9 @@ corresponding revision is pushed and observed.
 
 ## Remaining external validation
 
-Install the corrected APK without clearing app data and follow the focused
-C510W fullscreen/fallback and aspect-ratio scenarios in the manual plan. When adb
-is available, also authorize exactly one device and run `connectedDebugAndroidTest`
-before the remaining credential scenarios. Do not create a compatibility claim,
-release tag or GitHub Release until the corrected APK and remaining physical
-matrix have redacted evidence.
+Install the corrected APK without clearing app data and follow the focused wall
+frame/overlay, right-side fullscreen panel, Safe/Fit/Fill and C510W fallback
+scenarios in the manual plan. When adb is available, also authorize exactly one
+device and run `connectedDebugAndroidTest` before the remaining credential
+scenarios. Do not create a compatibility claim, release tag or GitHub Release
+until the corrected APK and remaining physical matrix have redacted evidence.
