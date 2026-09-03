@@ -1,8 +1,8 @@
 # Security policy
 
-Report vulnerabilities privately through GitHub's security-advisory feature once
-the public repository is available. Do not open a public issue containing camera
-credentials, network addresses, full RTSP URIs, device identifiers or logs.
+Report vulnerabilities privately through this repository's GitHub security
+advisory feature. Do not open a public issue containing camera credentials,
+network addresses, full RTSP URIs, device identifiers or logs.
 
 CamGrid TV accepts only local-network camera targets and stores credential material
 encrypted on the Android device with a Keystore-held key. It intentionally has no

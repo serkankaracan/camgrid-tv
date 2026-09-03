@@ -187,7 +187,7 @@ Eşleme kodunu komut satırı argümanı olarak yazmayın; adb isteminde girin. 
 - Adım: Belleği yerel olarak gözlemleyin; mümkünse bir kamerayı kısa süre kapatın:
 
   ```powershell
-  & $adb shell dumpsys meminfo io.github.serkankaracan.camgridtv
+  & $adb shell dumpsys meminfo io.github.serkankaracan.camgridtv.debug
   ```
 
 - Beklenen: Bellek kontrolsüz büyümez; bir tile hatası diğer canlı tile'ı

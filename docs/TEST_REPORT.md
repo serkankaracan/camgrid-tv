@@ -33,7 +33,9 @@ validation.
 | Secret hygiene | PASS | `check-no-secrets.ps1` scanned 147 candidate files and exited 0 |
 | Whitespace/diff validation | PASS | `git diff --check` exited successfully |
 | Public GitHub repository | PASS | Public repository was created during Phase 0 |
-| Most recent GitHub Actions run | PASS | Phase 7 quality gate run `33706625607` completed successfully; Phase 8 documentation push is pending |
+| Clean-checkout Windows build | PASS | Phase 8 GitHub Actions checked out the repository on a fresh `windows-latest` runner, installed command-line SDK packages and passed the quality gate |
+| PowerShell 5.1 SDK helper syntax/encoding | PASS | Native PowerShell 5.1 parser returned 0 errors; the UTF-8 writer reports a 0-byte BOM preamble |
+| Most recent observed GitHub Actions run | PASS | Phase 8 run `33707389389` completed successfully for commit `bdb5d1c` and uploaded the debug APK artifact |
 
 Commands actually run from PowerShell:
 
@@ -62,6 +64,10 @@ and no instrumented test is reported as executed.
   `033AFA27F691852D11E56BF86C8FF8B4082AE8BF44E47DA097BE7C6A1CCCC0E2`
 - Distribution status: local debug/test artifact; not a release-signed build and
   not committed to Git.
+- CI artifact evidence: Phase 8 run
+  [`33707389389`](https://github.com/serkankaracan/camgrid-tv/actions/runs/33707389389)
+  uploaded `camgrid-tv-debug-bdb5d1cafd3000201a343d7f7ecdc163c34adb5a`;
+  GitHub reported it unexpired with retention through 2026-09-17.
 
 ## Physical and real-network acceptance
 
@@ -79,6 +85,7 @@ and no instrumented test is reported as executed.
 | Wi-Fi loss and reconnection recovery | BLOCKED | No physical Android TV/network test setup was available |
 | Wrong-password behavior with a real camera | BLOCKED | No physical camera or in-app credentials were available |
 | Selection persistence on a physical device | BLOCKED | No emulator or physical Android TV device was available |
+| Endpoint UUID rematch after a DHCP address change | BLOCKED | The physical cameras and controllable LAN were unavailable |
 | Logcat credential/URI audit during real playback | BLOCKED | No connected adb device or real stream was available |
 | Decoder and memory behavior under real concurrent streams | BLOCKED | Mi Stick and physical streams were unavailable |
 | Three-stream physical/fake-device grid observation | BLOCKED | No executable emulator or physical device was available |

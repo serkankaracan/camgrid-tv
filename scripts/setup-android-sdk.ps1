@@ -45,10 +45,13 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $portableSdkPath = $resolvedSdkRoot.Replace('\', '/').Replace(':', '\:')
-Set-Content `
-    -LiteralPath (Join-Path $projectRoot 'local.properties') `
-    -Value "sdk.dir=$portableSdkPath" `
-    -Encoding UTF8
+$localPropertiesPath = Join-Path $projectRoot 'local.properties'
+$utf8WithoutBom = New-Object -TypeName System.Text.UTF8Encoding -ArgumentList $false
+[System.IO.File]::WriteAllText(
+    $localPropertiesPath,
+    "sdk.dir=$portableSdkPath$([Environment]::NewLine)",
+    $utf8WithoutBom
+)
 
 Write-Output "Android SDK is ready at $resolvedSdkRoot"
 Write-Output 'Run .\scripts\invoke-quality-gate.ps1 from PowerShell.'

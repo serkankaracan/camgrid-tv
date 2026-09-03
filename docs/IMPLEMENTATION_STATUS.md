@@ -4,15 +4,17 @@ Last updated: 2026-09-03
 
 ## Current phase
 
-Phase 8 physical validation is BLOCKED because no physical C500, C510W, Mi
-Stick, emulator or connected adb device was available. The detailed manual plan
-and honest test evidence are prepared; Phase 9 documentation is next. Phases
-1–7 are implemented, locally verified and pushed.
+Phase 9 documentation and the alpha handoff package are prepared. Phases 0–7 are
+implemented, locally verified and pushed. Phase 8 was completed to the extent
+possible: device availability was checked and the detailed manual plan was
+prepared, but physical validation remains BLOCKED because no C500, C510W, Mi
+Stick, emulator or connected adb device was available.
 
-The Phase 0 public GitHub repository exists. The Phase 7 GitHub Actions quality
-gate passed in run `33706625607`. GitHub Actions for the Phase 8 documentation
-push and the final Phase 9 push must be observed separately before either is
-reported as successful.
+The Phase 0 public GitHub repository exists. Phase 8 commit `bdb5d1c` passed the
+GitHub Actions quality gate in run `33707389389` and produced a 14-day debug APK
+artifact. The CI result for the final Phase 9 documentation commit is necessarily
+external to that commit and must be recorded in GitHub Actions and the final
+handoff after push.
 
 ## Completed implementation
 
@@ -32,6 +34,10 @@ reported as successful.
 - Phase 7: retry/backoff, connectivity monitoring, lifecycle recovery, decoder
   error isolation, keep-screen-on control and debug diagnostics. Completed by
   commit `7e945c8`; GitHub Actions passed.
+- Phase 8: empty adb device check, redacted acceptance matrix and detailed
+  Windows/PowerShell manual test plan. Commit `bdb5d1c`; GitHub Actions passed.
+- Phase 9: Turkish-first README, architecture/troubleshooting documents,
+  changelog, roadmap and third-party notices. No tag or GitHub Release is claimed.
 
 ## Tests actually run
 
@@ -68,16 +74,15 @@ reported as successful.
 - Real wrong-password, reconnect, decoder/memory and logcat-redaction scenarios:
   BLOCKED.
 - Phase 7 GitHub Actions: PASS, run `33706625607`.
-- Phase 8 documentation and final Phase 9 GitHub Actions: NOT RUN yet.
+- Phase 8 GitHub Actions: PASS, run `33707389389`; debug artifact uploaded.
+- Final Phase 9 GitHub Actions: recorded externally after this document's commit.
 
 No port reachability, build result, fake stream or JVM test has been treated as
 evidence of successful physical playback.
 
-## Next
+## Remaining external validation
 
-1. Commit the Phase 8 evidence and manual plan, then observe its GitHub Actions
-   result.
-2. Finish the Phase 9 documentation/diff/secret review.
-3. Commit and push the final changes to `main`, then observe GitHub Actions.
-4. When hardware is available, execute every Phase 8 scenario from the manual
-   test plan and update each BLOCKED/NOT RUN entry with redacted evidence.
+When hardware is available, execute every Phase 8 scenario from the manual test
+plan and update each BLOCKED/NOT RUN entry with redacted evidence. Until then, do
+not create a compatibility claim, release tag or GitHub Release based on build,
+fake-player or port-reachability evidence alone.

@@ -11,8 +11,9 @@
 | GitHub login used for normalization | `serkankaracan` |
 | Namespace / application ID | `io.github.serkankaracan.camgridtv` |
 | Namespace normalization | lowercase; non-alphanumeric to `_`; numeric-leading segment gets `u_` |
-| Local project directory | `C:\Users\SKARACAN\source\repos\CamGridTV\camgrid-tv` |
+| Repository root after clone | `.\camgrid-tv` |
+| Public remote | `https://github.com/serkankaracan/camgrid-tv` |
 | Target platform | Android TV / Google TV |
 
-The login was obtained from the configured GitHub CLI account. API confirmation
-and remote creation remain contingent on valid GitHub authentication.
+The login was obtained from the configured GitHub CLI account. The public remote
+was created, pushed and verified on the `main` branch.
