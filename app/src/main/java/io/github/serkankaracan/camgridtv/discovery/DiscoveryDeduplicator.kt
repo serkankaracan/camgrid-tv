@@ -1,0 +1,71 @@
+package io.github.serkankaracan.camgridtv.discovery
+
+class DiscoveryDeduplicator {
+    fun addOrUpdate(
+        current: List<DiscoveredOnvifDevice>,
+        incoming: DiscoveredOnvifDevice,
+    ): List<DiscoveredOnvifDevice> {
+        val matches = current.withIndex().filter { (_, device) -> sameDevice(device, incoming) }
+        if (matches.isEmpty()) return (current + incoming).sortedBy(DiscoveredOnvifDevice::id)
+
+        val primaryIndex = matches.first().index
+        var merged = incoming
+        matches.forEach { (_, existing) -> merged = merge(existing, merged) }
+        val duplicateIndexes = matches.mapTo(mutableSetOf()) { it.index }
+        return buildList {
+                current.forEachIndexed { index, device ->
+                    when {
+                        index == primaryIndex -> add(merged)
+                        index !in duplicateIndexes -> add(device)
+                    }
+                }
+            }
+            .sortedBy(DiscoveredOnvifDevice::id)
+    }
+
+    fun deduplicate(devices: Iterable<DiscoveredOnvifDevice>): List<DiscoveredOnvifDevice> =
+        devices.fold(emptyList(), ::addOrUpdate)
+
+    fun sameDevice(first: DiscoveredOnvifDevice, second: DiscoveredOnvifDevice): Boolean {
+        val firstEndpoint = DiscoveryAddressNormalizer.endpoint(first.endpointUuid)
+        val secondEndpoint = DiscoveryAddressNormalizer.endpoint(second.endpointUuid)
+        if (firstEndpoint != null && firstEndpoint == secondEndpoint) return true
+
+        val firstAddresses =
+            first.xAddrs.mapNotNull(DiscoveryAddressNormalizer::xAddr).mapTo(mutableSetOf()) {
+                it.value
+            }
+        if (
+            second.xAddrs.mapNotNull(DiscoveryAddressNormalizer::xAddr).any {
+                it.value in firstAddresses
+            }
+        ) {
+            return true
+        }
+        return first.host.equals(second.host, ignoreCase = true) &&
+            first.onvifPort == second.onvifPort
+    }
+
+    private fun merge(
+        existing: DiscoveredOnvifDevice,
+        incoming: DiscoveredOnvifDevice,
+    ): DiscoveredOnvifDevice {
+        val newest =
+            if (incoming.lastSeenEpochMillis >= existing.lastSeenEpochMillis) incoming else existing
+        val oldest = if (newest === incoming) existing else incoming
+        return newest.copy(
+            id = existing.id,
+            endpointUuid = newest.endpointUuid ?: oldest.endpointUuid,
+            xAddrs =
+                (newest.xAddrs + oldest.xAddrs)
+                    .mapNotNull(DiscoveryAddressNormalizer::xAddr)
+                    .distinctBy(NormalizedXAddr::value)
+                    .map(NormalizedXAddr::value),
+            scopes = (newest.scopes + oldest.scopes).distinct(),
+            types = (newest.types + oldest.types).distinct(),
+            manufacturer = newest.manufacturer ?: oldest.manufacturer,
+            model = newest.model ?: oldest.model,
+            lastSeenEpochMillis = maxOf(existing.lastSeenEpochMillis, incoming.lastSeenEpochMillis),
+        )
+    }
+}

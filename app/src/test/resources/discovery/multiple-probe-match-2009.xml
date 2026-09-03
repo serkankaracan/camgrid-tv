@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope"
+    xmlns:wsa="http://www.w3.org/2005/08/addressing"
+    xmlns:wsd="http://docs.oasis-open.org/ws-dd/ns/discovery/2009/01"
+    xmlns:net="http://www.onvif.org/ver10/network/wsdl">
+  <env:Body>
+    <wsd:ProbeMatches>
+      <wsd:ProbeMatch>
+        <wsa:EndpointReference><wsa:Address>urn:uuid:aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee</wsa:Address></wsa:EndpointReference>
+        <wsd:Types>net:NetworkVideoTransmitter</wsd:Types>
+        <wsd:XAddrs>http://192.168.50.101:2020/onvif/device_service http://192.168.50.101:8080/alternate</wsd:XAddrs>
+        <wsd:MetadataVersion>1</wsd:MetadataVersion>
+      </wsd:ProbeMatch>
+      <wsd:ProbeMatch>
+        <wsa:EndpointReference><wsa:Address>urn:uuid:bbbbbbbb-cccc-4ddd-8eee-ffffffffffff</wsa:Address></wsa:EndpointReference>
+        <wsd:Types>net:NetworkVideoTransmitter</wsd:Types>
+        <wsd:Scopes>onvif://www.onvif.org/name/Garden onvif://www.onvif.org/hardware/C510W</wsd:Scopes>
+        <wsd:XAddrs>http://192.168.50.102:2020/custom/device</wsd:XAddrs>
+        <wsd:MetadataVersion>2</wsd:MetadataVersion>
+      </wsd:ProbeMatch>
+    </wsd:ProbeMatches>
+  </env:Body>
+</env:Envelope>
