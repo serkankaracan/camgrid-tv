@@ -8,8 +8,8 @@ The `0.1.0-alpha.1` implementation and handoff documentation are present. The
 final integrated source tree passed the Windows command-line quality gate on
 2026-09-03: 145 JVM tests passed, both lint variants completed without errors,
 and debug, instrumented-test and minified unsigned release APKs were assembled.
-The exact local evidence is recorded in `docs/TEST_REPORT.md`; revision and CI
-fields remain pending until this tree is committed and pushed.
+The exact local evidence is recorded in `docs/TEST_REPORT.md`. Implementation
+commit `42d73d2` passed GitHub Actions run `33729134264` in 7m 34s.
 
 Physical validation remains **BLOCKED** because no C500, C510W, Mi Stick,
 emulator or connected adb device is available. Build, JVM, fake-player and port
@@ -62,7 +62,7 @@ Current integrated evidence:
 | Final integrated quality gate | PASS; PowerShell gate exited 0 |
 | Final JVM test count | PASS; 145 tests, 0 failures/errors/skipped |
 | Final debug APK size and SHA-256 | PASS; 17,805,949 bytes, `8C7317B0EE7B20801ECE0CBC936AE46E5D9AD814A2965756ED7F34848F4FAE9A` |
-| Final revision and GitHub Actions run | PENDING PUSH |
+| Final revision and GitHub Actions run | PASS; implementation `42d73d2`, run `33729134264` |
 | Physical Mi Stick instrumented tests | BLOCKED |
 | Physical camera and Android TV acceptance | BLOCKED |
 

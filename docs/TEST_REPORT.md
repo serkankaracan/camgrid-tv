@@ -10,14 +10,13 @@ port check, fake or emulator test is not physical camera or Mi Stick evidence.
 ## Current candidate verification
 
 This section is the only source of truth for the current integrated working
-tree. Local evidence was measured on 2026-09-03 from the final source tree. The
-repository revision and GitHub Actions run remain pending until that exact tree
-is committed and pushed. Do not copy a number, hash or run ID from the
-historical section.
+tree. Local evidence was measured on 2026-09-03 from the final source tree, then
+the exact implementation tree was committed and observed in GitHub Actions. Do
+not copy a number, hash or run ID from the historical section.
 
 | Check | Status | Current evidence |
 | --- | --- | --- |
-| Repository revision | PENDING PUSH | Verified tree is based on `6d1e78d`; replace this with the implementation commit after push |
+| Repository revision | PASS | Implementation commit `42d73d210c0cf06d4ba7a172715d44ba59f53abe` |
 | Standard PowerShell quality gate | PASS | `scripts\invoke-quality-gate.ps1` exited 0; final run completed in 4m 7s |
 | Debug and release lint | PASS WITH WARNINGS | Each variant: 0 fatal, 0 error, 3 warnings; two dependency-update notices and the expected xhdpi-only TV banner density advisory |
 | JVM unit tests | PASS | 31 suites; 145 tests; 0 failures, 0 errors, 0 skipped |
@@ -30,7 +29,7 @@ historical section.
 | APK identity, signing and alignment | PASS | Debug package is `io.github.serkankaracan.camgridtv.debug`, target SDK 37, Leanback launcher present; debug and test APKs verify with one v2 signer; all three APKs pass zip alignment |
 | TV banner asset | PASS | 320x180, 32-bit PNG, 79,262 bytes; packaged as the application banner |
 | adb inventory | BLOCKED | 0 connected rows; 0 authorized, unauthorized or offline devices; `connectedDebugAndroidTest` was not run |
-| GitHub Actions | PENDING PUSH | Record a run only after the integrated revision is pushed and observed |
+| GitHub Actions | PASS | Android quality gate run [33729134264](https://github.com/serkankaracan/camgrid-tv/actions/runs/33729134264) passed in 7m 34s for the implementation commit |
 
 Run the final local evidence from Windows PowerShell, without assuming Android
 Studio:
