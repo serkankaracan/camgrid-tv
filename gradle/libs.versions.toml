@@ -1,7 +1,7 @@
 [versions]
 agp = "9.4.0"
 kotlin = "2.3.21"
-spotless = "8.10.1"
+spotless = "8.10.2"
 compose-bom = "2026.08.00"
 tv-material = "1.1.0"
 tv-foundation = "1.0.0"
