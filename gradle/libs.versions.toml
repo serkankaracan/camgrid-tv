@@ -2,7 +2,7 @@
 agp = "9.4.0"
 kotlin = "2.3.21"
 spotless = "8.10.1"
-compose-bom = "2026.08.00"
+compose-bom = "2026.09.00"
 tv-material = "1.1.0"
 tv-foundation = "1.0.0"
 activity = "1.13.0"
